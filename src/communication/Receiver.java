@@ -3,6 +3,7 @@ package communication;
 import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
+import java.net.SocketException;
 import java.sql.Timestamp;
 import java.util.Date;
 
@@ -12,8 +13,9 @@ public class Receiver implements Runnable {
     private DatagramSocket socket;
     private boolean receiverIsRunning;
 
-    public Receiver(){
+    public Receiver(String address, int port) throws SocketException {
         System.out.println("Receiver opened.");
+        socket = new DatagramSocket(port);
     }
 
     @Override

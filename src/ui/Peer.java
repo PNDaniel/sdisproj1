@@ -2,6 +2,9 @@ package ui;
 
 import communication.Receiver;
 import communication.Sender;
+import protocol.Backup;
+
+import java.net.SocketException;
 
 public class Peer {
 
@@ -10,12 +13,12 @@ public class Peer {
     private static int port;
     private static String ipAddress;
     private static int peerID;
-    public static int mcPort;
-    public static String mcAddress;
-    public static int mdbPort;
-    public static String mdbAddress;
-    public static int mdrPort;
-    public static String mdrAddress;
+    private static int mcPort;
+    private static String mcAddress;
+    private static int mdbPort;
+    private static String mdbAddress;
+    private static int mdrPort;
+    private static String mdrAddress;
 
     public static void main(String args[]){
         int protocolVersion = Integer.parseInt(args[0]);
@@ -30,19 +33,23 @@ public class Peer {
         mdrPort = Integer.parseInt(args[8]);
     }
 
-    public static void startReceiver(){
-        receiver = new Receiver();
-        receiver.start();
+    private static void startBackupChannel() throws SocketException {
+       // Backup backup = new Backup(mdbAddress, mdbPort);
+
     }
 
-    public static void startSender(){
-        sender = new Sender();
-        sender.start();
+    private static void startControChannel(){
+
     }
 
-    private void Peer(){
-        startReceiver();
-        startSender();
+    private static void startRestoreChannel(){
+
+    }
+
+    public void Peer() throws SocketException {
+        startBackupChannel();
+        startControChannel();
+        startRestoreChannel();
     }
 
     private static void splitAP(String args){
