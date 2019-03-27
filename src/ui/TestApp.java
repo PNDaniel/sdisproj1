@@ -2,28 +2,28 @@ package ui;
 
 import java.io.*;
 import java.lang.reflect.Array;
-import java.net.DatagramPacket;
-import java.net.DatagramSocket;
-import java.net.InetAddress;
-import java.net.UnknownHostException;
+import java.net.*;
 import java.sql.Timestamp;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Date;
 
 
 // Usar para Testes : :1923 BACKUP C:\Users\Daniel\Desktop\Recrutamento.txt 3
+// 192.168.1.1:1923 BACKUP C:\Users\Daniel\Downloads\teste.txt 3
 public class TestApp {
 
     private static int port;
     private static String ipAddress;
     private static String filename;
+    private static DatagramSocket socket;
 
-    public static void main(String args[]){
+    public static void main(String args[]) throws SocketException {
         System.out.println("TestApp Started.");
         testAppStateMachine(args);
     }
 
-    private static void testAppStateMachine(String args[]){
+    private static void testAppStateMachine(String args[]) throws SocketException {
         String operation;
         int size;
         int repDegree;
@@ -57,10 +57,10 @@ public class TestApp {
                 break;
         }
     }
-    static DatagramSocket socket;
-    private static void sendFile(ArrayList<byte[]> listOfFiles){
-        try {
 
+    private static void sendFile(ArrayList<byte[]> listOfFiles) throws SocketException {
+        socket = new DatagramSocket();
+        try {
             InetAddress address = InetAddress.getByName(ipAddress);
             for(int i = 0; i < listOfFiles.size(); i++) {
                 DatagramPacket packet = new DatagramPacket(listOfFiles.get(i), listOfFiles.get(i).length, address, port);
@@ -97,6 +97,7 @@ public class TestApp {
             port = Integer.parseInt(args);
             ipAddress = "localhost";
         }
+        System.out.println("IpAddress: " +  ipAddress + " and Port Number is : " + port);
     }
 
     //TODO https://netjs.blogspot.com/2017/04/reading-all-files-in-folder-java-program.html
@@ -104,8 +105,7 @@ public class TestApp {
     // https://www.mkyong.com/java/how-to-get-file-size-in-java/
     // https://stackoverflow.com/questions/10864317/how-to-break-a-file-into-pieces-using-java
     private static ArrayList<byte[]> breakFileToSend(String filepath) {
-        int partCounter = 1;//I like to name parts from 001, 002, 003, ...
-        //you can change it to 0 if you want 000, 001, ...
+        int partCounter = 1;
         int sizeOfFiles = 64000;
         ArrayList<byte[]> listOfFiles = new ArrayList<>();
         byte[] buffer = new byte[sizeOfFiles];
@@ -115,7 +115,7 @@ public class TestApp {
 
             int bytesAmount = 0;
             while ((bytesAmount = bis.read(buffer)) > 0) {
-                listOfFiles.add(buffer);
+                listOfFiles.add(Arrays.copyOf(buffer, bytesAmount));
                 //write each chunk of data into separate file with different number in name
                 String filePartName = String.format("%s Number: %03d", filepath, partCounter++);
                 System.out.println(filePartName + " Size: " + bytesAmount);
