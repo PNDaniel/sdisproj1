@@ -1,8 +1,15 @@
 package ui;
 
+import communication.Message;
 import communication.Receiver;
 import communication.Sender;
-import java.net.SocketException;
+import protocol.Backup;
+
+import java.io.IOException;
+import java.net.*;
+import java.sql.Timestamp;
+import java.util.ArrayList;
+import java.util.Date;
 
 public class Peer {
 
@@ -11,46 +18,74 @@ public class Peer {
     private static int port;
     private static String ipAddress;
     private static int peerID;
-    private static int mcPort;
-    private static String mcAddress;
-    private static int mdbPort;
-    private static String mdbAddress;
-    private static int mdrPort;
-    private static String mdrAddress;
+    private int mcPort;
+    private InetAddress mcAddress;
+    private int mdbPort;
+    private InetAddress mdbAddress;
+    private int mdrPort;
+    private InetAddress mdrAddress;
+    private DatagramSocket socket;
 
-    public static void main(String args[]) throws SocketException {
-        int protocolVersion = Integer.parseInt(args[0]);
-        peerID = Integer.parseInt(args[1]);
-        System.out.println("Peer " + peerID + " has started.");
+    public static void main(String args[]) throws SocketException, UnknownHostException {
+        double protocolVersion = Double.parseDouble(args[0]);
+
         splitAP(args[2]);
-        mcAddress = args[3];
-        mcPort = Integer.parseInt(args[4]);
-        mdbAddress = args[5];
-        mdbPort = Integer.parseInt(args[6]);
-        mdrAddress = args[7];
-        mdrPort = Integer.parseInt(args[8]);
-        new Peer();
+        Peer peer = new Peer(Integer.parseInt(args[1]),args[3],Integer.parseInt(args[4]) ,args[5], Integer.parseInt(args[6]), args[7], Integer.parseInt(args[8]));
     }
 
-    private static void startBackupChannel() throws SocketException {
-       // Backup backup = new Backup(mdbAddress, mdbPort);
-
+    private void startBackupChannel() throws SocketException {
+        Backup backup = new Backup(mdbAddress, mdbPort);
+        backup.start();
     }
 
-    private static void startControChannel(){
+    private void startControChannel(){
 
     }
 
-    private static void startRestoreChannel(){
+    private void startRestoreChannel(){
 
     }
 
-    public Peer() throws SocketException {
+    public Peer(int peerID, String mcAddress, int mcPort, String mdbAddress, int mdbPort, String mdrAddress, int mdrPort) throws SocketException, UnknownHostException {
+        this.peerID = peerID;
+        this.mcAddress =  InetAddress.getByName(mcAddress);
+        this.mcPort = mcPort;
+        this.mdbAddress =  InetAddress.getByName(mdbAddress);
+        this.mdbPort = mdbPort;
+        this.mdrAddress =  InetAddress.getByName(mdrAddress);
+        this.mdrPort = mdrPort;
+
+        System.out.println("Peer " + peerID + " has started.");
+
         startBackupChannel();
         startControChannel();
         startRestoreChannel();
-        Receiver receiver = new Receiver(mcAddress, 1923);
+        Receiver receiver = new Receiver(mcAddress, mcPort);
         receiver.start();
+    }
+
+    public void backup(ArrayList<byte[]> listOfFiles, int repDeg) throws SocketException {
+        socket = new DatagramSocket();
+        try {
+            InetAddress address = InetAddress.getByName(ipAddress);
+            for(int i = 0; i < listOfFiles.size(); i++) {
+                DatagramPacket packet = new DatagramPacket(listOfFiles.get(i), listOfFiles.get(i).length, address, port);
+                Date date = new Date();
+                socket.send(packet);
+                System.out.println(new Timestamp(date.getTime()) + " Já tá.");
+            }
+
+//            packet = new DatagramPacket(buf, buf.length);
+//            socket.receive(packet);
+//            String received = new String(packet.getData(), 0, packet.getLength());
+//            System.out.println(received);
+        } catch (UnknownHostException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        } catch (IOException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
     }
 
     private static void splitAP(String args){

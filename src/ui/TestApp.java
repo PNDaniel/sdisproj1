@@ -13,12 +13,13 @@ import java.util.Date;
 // 192.168.1.1:1923 BACKUP C:\Users\Daniel\Downloads\teste.txt 3
 public class TestApp {
 
+    private static Peer peer;
     private static int port;
     private static String ipAddress;
     private static String filename;
     private static DatagramSocket socket;
 
-    public static void main(String args[]) throws SocketException {
+    public static void main(String args[]) throws SocketException, UnknownHostException {
         System.out.println("TestApp Started.");
         testAppStateMachine(args);
     }
@@ -35,7 +36,7 @@ public class TestApp {
                 filename = args[2];
                 repDegree =  Integer.parseInt(args[3]);
              //   breakFileToSend(filename);
-                sendFile(breakFileToSend(filename));
+                peer.backup(breakFileToSend(filename), repDegree);
                 break;
             case "RESTORE":
                 System.out.println("Operation was " + operation);
@@ -58,29 +59,6 @@ public class TestApp {
         }
     }
 
-    private static void sendFile(ArrayList<byte[]> listOfFiles) throws SocketException {
-        socket = new DatagramSocket();
-        try {
-            InetAddress address = InetAddress.getByName(ipAddress);
-            for(int i = 0; i < listOfFiles.size(); i++) {
-                DatagramPacket packet = new DatagramPacket(listOfFiles.get(i), listOfFiles.get(i).length, address, port);
-                Date date = new Date();
-                socket.send(packet);
-                System.out.println(new Timestamp(date.getTime()) + " Já tá.");
-            }
-
-//            packet = new DatagramPacket(buf, buf.length);
-//            socket.receive(packet);
-//            String received = new String(packet.getData(), 0, packet.getLength());
-//            System.out.println(received);
-        } catch (UnknownHostException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
-        } catch (IOException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
-        }
-    }
 
     private static void splitAP(String args){
         if(args.contains(":")){
