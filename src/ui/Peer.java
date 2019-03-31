@@ -64,21 +64,24 @@ public class Peer {
         receiver.start();
     }
 
+
+
     public void backup(ArrayList<byte[]> listOfFiles, int repDeg) throws SocketException {
-        socket = new DatagramSocket();
-        try {
+        try (MulticastSocket socket = new MulticastSocket(port)) {
+            byte[] buf = new byte[65000];
             InetAddress address = InetAddress.getByName(ipAddress);
+            socket.joinGroup(address);
             for(int i = 0; i < listOfFiles.size(); i++) {
                 DatagramPacket packet = new DatagramPacket(listOfFiles.get(i), listOfFiles.get(i).length, address, port);
                 Date date = new Date();
                 socket.send(packet);
-                System.out.println(new Timestamp(date.getTime()) + " Já tá.");
+                System.out.println(new Timestamp(date.getTime()) + " chunk was sent.");
             }
 
-//            packet = new DatagramPacket(buf, buf.length);
-//            socket.receive(packet);
-//            String received = new String(packet.getData(), 0, packet.getLength());
-//            System.out.println(received);
+            DatagramPacket packet = new DatagramPacket(buf, buf.length);
+            socket.receive(packet);
+            String received = new String(packet.getData(), 0, packet.getLength());
+            System.out.println(received);
         } catch (UnknownHostException e) {
             // TODO Auto-generated catch block
             e.printStackTrace();
