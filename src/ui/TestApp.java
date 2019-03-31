@@ -15,16 +15,21 @@ public class TestApp {
 
     private static Peer peer;
     private static int port;
-    private static String ipAddress;
+    private static InetAddress ipAddress;
     private static String filename;
     private static DatagramSocket socket;
 
     public static void main(String args[]) throws SocketException, UnknownHostException {
         System.out.println("TestApp Started.");
+        new TestApp(args);
+
+    }
+
+    private TestApp(String args[]) throws SocketException, UnknownHostException {
         testAppStateMachine(args);
     }
 
-    private static void testAppStateMachine(String args[]) throws SocketException {
+    private void testAppStateMachine(String args[]) throws SocketException, UnknownHostException {
         String operation;
         int size;
         int repDegree;
@@ -37,6 +42,7 @@ public class TestApp {
                 repDegree =  Integer.parseInt(args[3]);
              //   breakFileToSend(filename);
                 peer.backup(breakFileToSend(filename), repDegree);
+                initiatePeer(initMsg);
                 break;
             case "RESTORE":
                 System.out.println("Operation was " + operation);
@@ -60,21 +66,41 @@ public class TestApp {
     }
 
 
-    private static void splitAP(String args){
+    private void initiatePeer(String msg) {
+        // Open a new DatagramSocket, which will be used to send the data.
+        try (MulticastSocket serverSocket = new MulticastSocket(this.port)) {
+            serverSocket.joinGroup(this.ipAddress);
+
+            DatagramPacket msgPacket = new DatagramPacket(msg.getBytes(), msg.getBytes().length, this.ipAddress, this.port);
+            serverSocket.send(msgPacket);
+            try {
+                Thread.sleep(400);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        } catch (IOException ex) {
+            ex.printStackTrace();
+        }
+    }
+
+
+    private static void splitAP(String args) throws UnknownHostException {
+        String address;
         if(args.contains(":")){
             String[] output = args.split("\\:");
             port = Integer.parseInt(output[1]);
             if( output[0].length()== 0){
-                ipAddress = "localhost";
+                address = "localhost";
             }
             else {
-                ipAddress = output[0];
+                address = output[0];
             }
         }
         else {
             port = Integer.parseInt(args);
-            ipAddress = "localhost";
+            address = "localhost";
         }
+        ipAddress = InetAddress.getByName(address);
         System.out.println("IpAddress: " +  ipAddress + " and Port Number is : " + port);
     }
 

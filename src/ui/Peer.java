@@ -64,8 +64,6 @@ public class Peer {
         receiver.start();
     }
 
-
-
     public void backup(ArrayList<byte[]> listOfFiles, int repDeg) throws SocketException {
         try (MulticastSocket socket = new MulticastSocket(port)) {
             byte[] buf = new byte[65000];
