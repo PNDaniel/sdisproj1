@@ -29,7 +29,7 @@ public class Message {
         return sb.toString();
     }
 
-    private String createPutchunkMessage(int chunkNo, int repDeg, byte[] body){
+    public String createPutchunkMessage(int chunkNo, int repDeg, byte[] body){
         StringBuilder sb = new StringBuilder(createStandardMessage());
         sb.append(" ");sb.append(chunkNo);
         sb.append(" ");sb.append(repDeg);

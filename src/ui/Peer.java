@@ -60,8 +60,8 @@ public class Peer {
         startBackupChannel();
         startControChannel();
         startRestoreChannel();
-        Receiver receiver = new Receiver(mcAddress, mcPort);
-        receiver.start();
+//        Receiver receiver = new Receiver(mcAddress, mcPort);
+//        receiver.start();
     }
 
     public void backup(ArrayList<byte[]> listOfFiles, int repDeg) throws SocketException {

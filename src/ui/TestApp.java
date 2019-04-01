@@ -1,5 +1,7 @@
 package ui;
 
+import communication.Message;
+
 import java.io.*;
 import java.lang.reflect.Array;
 import java.net.*;
@@ -35,36 +37,45 @@ public class TestApp {
         int repDegree;
         splitAP(args[0]);
         operation = args[1];
+        String initMsg;
         switch(operation.toUpperCase()){
             case "BACKUP":
                 System.out.println("Operation was " + operation);
                 filename = args[2];
                 repDegree =  Integer.parseInt(args[3]);
              //   breakFileToSend(filename);
-                peer.backup(breakFileToSend(filename), repDegree);
+                //peer.backup(breakFileToSend(filename), repDegree);
+                initMsg = "BACKUP " + filename + " " + repDegree;
                 initiatePeer(initMsg);
                 break;
             case "RESTORE":
                 System.out.println("Operation was " + operation);
                 filename = args[2];
+                initMsg = "RESTORE " + filename ;
+                initiatePeer(initMsg);
                 break;
             case "DELETE":
                 System.out.println("Operation was " + operation);
                 filename = args[2];
+                initMsg = "DELETE " + filename ;
+                initiatePeer(initMsg);
                 break;
             case "RECLAIM":
                 System.out.println("Operation was " + operation);
                 size = Integer.parseInt(args[2]);
+                initMsg = "RECLAIM " + size ;
+                initiatePeer(initMsg);
                 break;
             case "STATE":
                 System.out.println("Operation was " + operation);
+                initMsg = "STATE" ;
+                initiatePeer(initMsg);
                 break;
             default:
                 System.out.println("Wrong operation! - " + operation);
                 break;
         }
     }
-
 
     private void initiatePeer(String msg) {
         // Open a new DatagramSocket, which will be used to send the data.
@@ -82,7 +93,6 @@ public class TestApp {
             ex.printStackTrace();
         }
     }
-
 
     private static void splitAP(String args) throws UnknownHostException {
         String address;
