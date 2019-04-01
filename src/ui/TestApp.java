@@ -111,7 +111,7 @@ public class TestApp {
             address = "localhost";
         }
         ipAddress = InetAddress.getByName(address);
-        System.out.println("IpAddress: " +  ipAddress + " and Port Number is : " + port);
+        System.out.println("IpAddress: " +  address + " and Port Number is: " + port);
     }
 
     //TODO https://netjs.blogspot.com/2017/04/reading-all-files-in-folder-java-program.html

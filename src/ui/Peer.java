@@ -16,7 +16,7 @@ public class Peer {
     private static Receiver receiver;
     private static Sender sender;
     private static int port;
-    private static String ipAddress;
+    private static InetAddress ipAddress;
     private static int peerID;
     private int mcPort;
     private InetAddress mcAddress;
@@ -60,49 +60,89 @@ public class Peer {
         startBackupChannel();
         startControChannel();
         startRestoreChannel();
+      //  run();
 //        Receiver receiver = new Receiver(mcAddress, mcPort);
 //        receiver.start();
     }
 
-    public void backup(ArrayList<byte[]> listOfFiles, int repDeg) throws SocketException {
-        try (MulticastSocket socket = new MulticastSocket(port)) {
-            byte[] buf = new byte[65000];
-            InetAddress address = InetAddress.getByName(ipAddress);
-            socket.joinGroup(address);
-            for(int i = 0; i < listOfFiles.size(); i++) {
-                DatagramPacket packet = new DatagramPacket(listOfFiles.get(i), listOfFiles.get(i).length, address, port);
-                Date date = new Date();
-                socket.send(packet);
-                System.out.println(new Timestamp(date.getTime()) + " chunk was sent.");
-            }
+//    public void backup(ArrayList<byte[]> listOfFiles, int repDeg) throws SocketException {
+//        try (MulticastSocket socket = new MulticastSocket(port)) {
+//            byte[] buf = new byte[65000];
+//            InetAddress address = InetAddress.getByName(ipAddress);
+//            socket.joinGroup(address);
+//            for(int i = 0; i < listOfFiles.size(); i++) {
+//                DatagramPacket packet = new DatagramPacket(listOfFiles.get(i), listOfFiles.get(i).length, address, port);
+//                Date date = new Date();
+//                socket.send(packet);
+//                System.out.println(new Timestamp(date.getTime()) + " chunk was sent.");
+//            }
+//
+//            DatagramPacket packet = new DatagramPacket(buf, buf.length);
+//            socket.receive(packet);
+//            String received = new String(packet.getData(), 0, packet.getLength());
+//            System.out.println(received);
+//        } catch (UnknownHostException e) {
+//            // TODO Auto-generated catch block
+//            e.printStackTrace();
+//        } catch (IOException e) {
+//            // TODO Auto-generated catch block
+//            e.printStackTrace();
+//        }
+//    }
 
-            DatagramPacket packet = new DatagramPacket(buf, buf.length);
-            socket.receive(packet);
-            String received = new String(packet.getData(), 0, packet.getLength());
-            System.out.println(received);
-        } catch (UnknownHostException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
-        } catch (IOException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
+    public void run() {
+        System.out.println("I'm listening on " + ipAddress + ":" + port);
+        // Create a buffer of bytes, which will be used to store
+        // the incoming bytes containing the information from the server.
+        // Since the message is small here, 256 bytes should be enough.
+        byte[] buf = new byte[256];
+
+        // Create a new Multicast socket (that will allow other sockets/programs
+        // to join it as well.
+        try (MulticastSocket clientSocket = new MulticastSocket(port)) {
+
+            //Joint the Multicast group.
+            clientSocket.joinGroup(ipAddress);
+
+            while (true) {
+                // Receive the information and print it.
+                DatagramPacket msgPacket = new DatagramPacket(buf, buf.length);
+                clientSocket.receive(msgPacket);
+
+                String msg = new String(buf, 0, buf.length);
+                msg = msg.replace("\r\n\r\n", " ");
+
+                String[] msg_parts = msg.split(" ");
+
+                if (!msg_parts[0].matches("BACKUP|RESTORE|DELETE|RECLAIM")) {
+                    System.out.println("Received invalid order: " + msg_parts[0]);
+                } else if (msg_parts[0].equals("BACKUP")) {
+                    System.out.println(msg);
+                    //this.getPeer().backup(msg_parts[1], Integer.parseInt(msg_parts[2]));
+                }
+            }
+        } catch (IOException ex) {
+            ex.printStackTrace();
         }
     }
 
-    private static void splitAP(String args){
+    private static void splitAP(String args) throws UnknownHostException {
+        String address;
         if(args.contains(":")){
             String[] output = args.split("\\:");
             port = Integer.parseInt(output[1]);
             if( output[0].length()== 0){
-                ipAddress = "localhost";
+                address = "localhost";
             }
             else {
-                ipAddress = output[0];
+                address = output[0];
             }
         }
         else {
             port = Integer.parseInt(args);
-            ipAddress = "localhost";
+            address = "localhost";
         }
+        ipAddress = InetAddress.getByName(address);
+        System.out.println("IpAddress: " +  address + " and Port Number is: " + port);
     }
 }
