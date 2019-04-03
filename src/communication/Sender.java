@@ -1,6 +1,7 @@
 package communication;
 
-import javax.sound.sampled.Port;
+import ui.Peer;
+
 import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
@@ -17,7 +18,7 @@ public class Sender implements Runnable {
     private int port;
     private boolean senderIsRunning;
 
-    public Sender(){
+    public Sender(Peer peer){
         System.out.println("Sender prepared.");
     }
 

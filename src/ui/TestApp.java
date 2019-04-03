@@ -79,8 +79,9 @@ public class TestApp {
 
     private void initiatePeer(String msg) {
         // Open a new DatagramSocket, which will be used to send the data.
-        try (MulticastSocket serverSocket = new MulticastSocket(this.port)) {
-            serverSocket.joinGroup(this.ipAddress);
+        try {
+            DatagramSocket serverSocket = new DatagramSocket();
+//            serverSocket.joinGroup(this.ipAddress);
 
             DatagramPacket msgPacket = new DatagramPacket(msg.getBytes(), msg.getBytes().length, this.ipAddress, this.port);
             serverSocket.send(msgPacket);
@@ -112,40 +113,5 @@ public class TestApp {
         }
         ipAddress = InetAddress.getByName(address);
         System.out.println("IpAddress: " +  address + " and Port Number is: " + port);
-    }
-
-    //TODO https://netjs.blogspot.com/2017/04/reading-all-files-in-folder-java-program.html
-
-    // https://www.mkyong.com/java/how-to-get-file-size-in-java/
-    // https://stackoverflow.com/questions/10864317/how-to-break-a-file-into-pieces-using-java
-    private static ArrayList<byte[]> breakFileToSend(String filepath) {
-        int partCounter = 1;
-        int sizeOfFiles = 64000;
-        ArrayList<byte[]> listOfFiles = new ArrayList<>();
-        byte[] buffer = new byte[sizeOfFiles];
-        File file = new File(filepath);
-        try (FileInputStream fis = new FileInputStream(file);
-             BufferedInputStream bis = new BufferedInputStream(fis)) {
-
-            int bytesAmount = 0;
-            while ((bytesAmount = bis.read(buffer)) > 0) {
-                listOfFiles.add(Arrays.copyOf(buffer, bytesAmount));
-                //write each chunk of data into separate file with different number in name
-                String filePartName = String.format("%s Number: %03d", filepath, partCounter++);
-                System.out.println(filePartName + " Size: " + bytesAmount);
-            //    File newFile = new File(file.getParent(), filePartName);
-//                try (FileOutputStream out = new FileOutputStream(newFile)) {
-//                    out.write(buffer, 0, bytesAmount);
-//                }
-            }
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-        if(listOfFiles.get(listOfFiles.size() - 1).length == 64000){
-            byte[] lastItem= new byte[0];
-            listOfFiles.add(lastItem);
-        }
-        System.out.println("Ora bem: " + listOfFiles.size());
-        return listOfFiles;
     }
 }

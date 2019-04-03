@@ -2,16 +2,14 @@ package communication;
 
 import utils.Support;
 
-import java.util.ArrayList;
-
 public class Message {
 
-    private Support.Protocol protocol;
+    private String protocol;
     private double version;
     private int senderID;
     private String fileID;
 
-    public Message(Support.Protocol protocol, double version, int senderID, String fileID ) {
+    public Message(String protocol, double version, int senderID, String fileID ) {
 
         this.protocol = protocol;
         this.version = version;
@@ -36,11 +34,10 @@ public class Message {
         sb.append(" ");sb.append("\r\n\r\n");
         sb.append(" ");sb.append(body);
 
-
         return sb.toString();
     }
 
-    private String createStoredMessage(int chunkNo){
+    public String createStoredMessage(int chunkNo){
         StringBuilder sb = new StringBuilder(createStandardMessage());
         sb.append(" ");sb.append(chunkNo);
         sb.append(" ");sb.append("\r\n\r\n");
@@ -48,7 +45,7 @@ public class Message {
         return sb.toString();
     }
 
-    private String createGetChunkMessage(int chunkNo){
+    public String createGetChunkMessage(int chunkNo){
         StringBuilder sb = new StringBuilder(createStandardMessage());
         sb.append(" ");sb.append(chunkNo);
         sb.append(" ");sb.append("\r\n\r\n");
@@ -56,7 +53,7 @@ public class Message {
         return sb.toString();
     }
 
-    private String createChunkMessage(int chunkNo, byte[] body){
+    public String createChunkMessage(int chunkNo, byte[] body){
         StringBuilder sb = new StringBuilder(createStandardMessage());
         sb.append(" ");sb.append(chunkNo);
         sb.append(" ");sb.append("\r\n\r\n");
@@ -65,13 +62,13 @@ public class Message {
         return sb.toString();
     }
 
-    private String createDeleteMessage(){
+    public String createDeleteMessage(){
         StringBuilder sb = new StringBuilder(createStandardMessage());
         sb.append(" ");sb.append("\r\n\r\n");
         return sb.toString();
     }
 
-    private String createRemovedMessage(int chunkNo){
+    public String createRemovedMessage(int chunkNo){
         StringBuilder sb = new StringBuilder(createStandardMessage());
         sb.append(" ");sb.append(chunkNo);
         sb.append(" ");sb.append("\r\n\r\n");
@@ -79,4 +76,19 @@ public class Message {
         return sb.toString();
     }
 
+    public String getProtocol() {
+        return protocol;
+    }
+
+    public double getVersion() {
+        return version;
+    }
+
+    public int getSenderID() {
+        return senderID;
+    }
+
+    public String getFileID() {
+        return fileID;
+    }
 }

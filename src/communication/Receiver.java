@@ -1,8 +1,11 @@
 package communication;
 
+import ui.Peer;
+
 import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
+import java.net.InetAddress;
 import java.net.SocketException;
 import java.sql.Timestamp;
 import java.util.Date;
@@ -10,12 +13,14 @@ import java.util.Date;
 public class Receiver implements Runnable {
 
     private Thread thread;
+    private Peer peer;
     private DatagramSocket socket;
     private boolean receiverIsRunning;
 
-    public Receiver(String address, int port) throws SocketException {
+    public Receiver(Peer peer , InetAddress address, int port) throws SocketException {
         System.out.println("Receiver opened.");
         socket = new DatagramSocket(port);
+        this.peer = peer;
     }
 
     @Override
@@ -34,10 +39,9 @@ public class Receiver implements Runnable {
                  */
                 // https://www.mkyong.com/java/how-to-get-current-timestamps-in-java/
                 String messageReceived= new String(packet.getData(), 0, packet.getLength());
-                System.out.println("TimeStamp: " + new Timestamp(date.getTime()) +" |Full String: " + messageReceived);
+                System.out.println("TimeStamp: " + new Timestamp(date.getTime()) +" |Order from TestApp: " + messageReceived);
                 String[] splitString = messageReceived.trim().split("\\s+"); // Any number of consecutive spaces in the string are split into tokens.
                 // https://stackoverflow.com/questions/2220400/how-do-i-make-my-string-comparison-case-insensitive
-                System.out.println("Full Name: " + concatenateName(splitString));
                 byte[] returnString;
                 DatagramPacket returnPacket;
                 switch (splitString[0])
@@ -45,6 +49,7 @@ public class Receiver implements Runnable {
                     case "BACKUP":
                         System.out.println("Backup Message received.");
                         returnString = "Backup, gz.".getBytes();
+                        peer.sendPutchunk(splitString[1]);
                         break;
                     case "RESTORE":
                         System.out.println("Restore Message received.");
@@ -64,7 +69,7 @@ public class Receiver implements Runnable {
                         break;
                 }
                 returnPacket = new DatagramPacket(returnString, returnString.length, packet.getAddress(), packet.getPort());
-                socket.send(returnPacket);
+             //   socket.send(returnPacket);
             } catch (IOException e) {
                 // TODO Auto-generated catch block
                 e.printStackTrace();
@@ -74,7 +79,7 @@ public class Receiver implements Runnable {
     }
 
     public Thread start() {
-        System.out.println("LOG: Receiver Runnable has started.");
+        System.out.println("Receiver Runnable has started.");
         if (thread == null) {
             thread = new Thread (this, "threadReceiver");
             thread.start();

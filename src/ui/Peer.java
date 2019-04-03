@@ -4,11 +4,19 @@ import communication.Message;
 import communication.Receiver;
 import communication.Sender;
 import protocol.Backup;
+import protocol.Control;
 
+import java.io.BufferedInputStream;
+import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.net.*;
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.sql.Timestamp;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Date;
 
 public class Peer {
@@ -17,13 +25,13 @@ public class Peer {
     private static Sender sender;
     private static int port;
     private static InetAddress ipAddress;
-    private static int peerID;
-    private int mcPort;
-    private InetAddress mcAddress;
-    private int mdbPort;
-    private InetAddress mdbAddress;
-    private int mdrPort;
-    private InetAddress mdrAddress;
+    public static int peerID;
+    public int mcPort;
+    public InetAddress mcAddress;
+    public int mdbPort;
+    public InetAddress mdbAddress;
+    public int mdrPort;
+    public InetAddress mdrAddress;
     private DatagramSocket socket;
 
     public static void main(String args[]) throws SocketException, UnknownHostException {
@@ -31,19 +39,6 @@ public class Peer {
 
         splitAP(args[2]);
         Peer peer = new Peer(Integer.parseInt(args[1]),args[3],Integer.parseInt(args[4]) ,args[5], Integer.parseInt(args[6]), args[7], Integer.parseInt(args[8]));
-    }
-
-    private void startBackupChannel() throws SocketException {
-        Backup backup = new Backup(mdbAddress, mdbPort);
-        backup.start();
-    }
-
-    private void startControChannel(){
-
-    }
-
-    private void startRestoreChannel(){
-
     }
 
     public Peer(int peerID, String mcAddress, int mcPort, String mdbAddress, int mdbPort, String mdrAddress, int mdrPort) throws SocketException, UnknownHostException {
@@ -57,12 +52,70 @@ public class Peer {
 
         System.out.println("Peer " + peerID + " has started.");
 
-        startBackupChannel();
-        startControChannel();
-        startRestoreChannel();
-      //  run();
-//        Receiver receiver = new Receiver(mcAddress, mcPort);
-//        receiver.start();
+        Receiver receiver = new Receiver(this, ipAddress, port);
+        receiver.start();
+
+        startBackupListener();
+        startControlListener();
+        startRestoreListener();
+    }
+
+    public void sendPutchunk(String filename){
+        byte[] buf = new byte[64000];
+        ArrayList<byte[]> fileToSend = breakFileToSend(filename);
+        String hashedFileName = hashEncoder(filename);
+        try (MulticastSocket socket = new MulticastSocket(mdbPort)) {
+          //  socket.setLoopbackMode(true);
+            socket.joinGroup(mdbAddress);
+            Message msg = new Message("PUTCHUNK", 1.0,this.getPeerID(), hashedFileName );
+            for (int i = 0; i < fileToSend.size() ; i++){
+                buf = fileToSend.get(i);
+                String msgToSend = msg.createChunkMessage(i,buf);
+                DatagramPacket packet = new DatagramPacket(msgToSend.getBytes(), msgToSend.getBytes().length, mdbAddress, mdbPort);
+                socket.send(packet);
+            }
+        } catch (IOException ex) {
+            ex.printStackTrace();
+        }
+    }
+
+    public void sendStored(String filename){
+        try (MulticastSocket socket = new MulticastSocket(mcPort)) {
+            //  socket.setLoopbackMode(true);
+            socket.joinGroup(mcAddress);
+            Message msg = new Message("STORED", 1.0,this.getPeerID(), filename);
+            String msgToSend = msg.createStoredMessage(1);
+            //DatagramPacket msgPacket = new DatagramPacket(msgToSend.getBytes(), msgToSend.getBytes().length, this.getIp(), this.getPort());
+            DatagramPacket msgPacket = new DatagramPacket(msgToSend.getBytes(), msgToSend.getBytes().length, mcAddress, mcPort);
+            socket.send(msgPacket);
+        } catch (IOException ex) {
+            ex.printStackTrace();
+        }
+    }
+
+    // https://stackoverflow.com/questions/5531455/how-to-hash-some-string-with-sha256-in-java
+    private String hashEncoder (String filename) {
+        byte[] hashedName = null;
+        try {
+            MessageDigest digest = MessageDigest.getInstance("SHA-256");
+            hashedName = digest.digest(filename.getBytes(StandardCharsets.UTF_8));
+        } catch (NoSuchAlgorithmException e) {
+            e.printStackTrace();
+        }
+        return toHexString(hashedName);
+    }
+
+    // https://stackoverflow.com/questions/332079/in-java-how-do-i-convert-a-byte-array-to-a-string-of-hex-digits-while-keeping-l
+    public static String toHexString(byte[] bytes) {
+        StringBuilder hexString = new StringBuilder();
+        for (int i = 0; i < bytes.length; i++) {
+            String hex = Integer.toHexString(0xFF & bytes[i]);
+            if (hex.length() == 1) {
+                hexString.append('0');
+            }
+            hexString.append(hex);
+        }
+        return hexString.toString();
     }
 
 //    public void backup(ArrayList<byte[]> listOfFiles, int repDeg) throws SocketException {
@@ -90,40 +143,39 @@ public class Peer {
 //        }
 //    }
 
-    public void run() {
-        System.out.println("I'm listening on " + ipAddress + ":" + port);
-        // Create a buffer of bytes, which will be used to store
-        // the incoming bytes containing the information from the server.
-        // Since the message is small here, 256 bytes should be enough.
-        byte[] buf = new byte[256];
+    //TODO https://netjs.blogspot.com/2017/04/reading-all-files-in-folder-java-program.html
 
-        // Create a new Multicast socket (that will allow other sockets/programs
-        // to join it as well.
-        try (MulticastSocket clientSocket = new MulticastSocket(port)) {
+    // https://www.mkyong.com/java/how-to-get-file-size-in-java/
+    // https://stackoverflow.com/questions/10864317/how-to-break-a-file-into-pieces-using-java
+    private static ArrayList<byte[]> breakFileToSend(String filepath) {
+        int partCounter = 1;
+        int sizeOfFiles = 64000;
+        ArrayList<byte[]> listOfFiles = new ArrayList<>();
+        byte[] buffer = new byte[sizeOfFiles];
+        File file = new File(filepath);
+        try (FileInputStream fis = new FileInputStream(file);
+             BufferedInputStream bis = new BufferedInputStream(fis)) {
 
-            //Joint the Multicast group.
-            clientSocket.joinGroup(ipAddress);
-
-            while (true) {
-                // Receive the information and print it.
-                DatagramPacket msgPacket = new DatagramPacket(buf, buf.length);
-                clientSocket.receive(msgPacket);
-
-                String msg = new String(buf, 0, buf.length);
-                msg = msg.replace("\r\n\r\n", " ");
-
-                String[] msg_parts = msg.split(" ");
-
-                if (!msg_parts[0].matches("BACKUP|RESTORE|DELETE|RECLAIM")) {
-                    System.out.println("Received invalid order: " + msg_parts[0]);
-                } else if (msg_parts[0].equals("BACKUP")) {
-                    System.out.println(msg);
-                    //this.getPeer().backup(msg_parts[1], Integer.parseInt(msg_parts[2]));
-                }
+            int bytesAmount = 0;
+            while ((bytesAmount = bis.read(buffer)) > 0) {
+                listOfFiles.add(Arrays.copyOf(buffer, bytesAmount));
+                //write each chunk of data into separate file with different number in name
+                String filePartName = String.format("%s Number: %03d", filepath, partCounter++);
+                System.out.println(filePartName + " Size: " + bytesAmount);
+                //    File newFile = new File(file.getParent(), filePartName);
+//                try (FileOutputStream out = new FileOutputStream(newFile)) {
+//                    out.write(buffer, 0, bytesAmount);
+//                }
             }
-        } catch (IOException ex) {
-            ex.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
         }
+        if(listOfFiles.get(listOfFiles.size() - 1).length == 64000){
+            byte[] lastItem= new byte[0];
+            listOfFiles.add(lastItem);
+        }
+        System.out.println("Ora bem: " + listOfFiles.size());
+        return listOfFiles;
     }
 
     private static void splitAP(String args) throws UnknownHostException {
@@ -144,5 +196,47 @@ public class Peer {
         }
         ipAddress = InetAddress.getByName(address);
         System.out.println("IpAddress: " +  address + " and Port Number is: " + port);
+    }
+
+    private void startBackupListener() throws SocketException {
+        Backup backup = new Backup(this);
+        backup.start();
+    }
+
+    private void startControlListener(){
+        Control control = new Control(this);
+        control.start();
+    }
+
+    private void startRestoreListener(){
+
+    }
+
+    public int getPeerID() {
+        return peerID;
+    }
+
+    public int getMcPort() {
+        return mcPort;
+    }
+
+    public InetAddress getMcAddress() {
+        return mcAddress;
+    }
+
+    public int getMdbPort() {
+        return mdbPort;
+    }
+
+    public InetAddress getMdbAddress() {
+        return mdbAddress;
+    }
+
+    public int getMdrPort() {
+        return mdrPort;
+    }
+
+    public InetAddress getMdrAddress() {
+        return mdrAddress;
     }
 }
