@@ -2,10 +2,10 @@ package ui;
 
 import communication.Message;
 import communication.Receiver;
-import communication.Sender;
 import protocol.Backup;
 import protocol.Control;
 
+import javax.xml.crypto.Data;
 import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.FileInputStream;
@@ -14,31 +14,26 @@ import java.net.*;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
-import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Date;
 
 public class Peer {
 
-    private static Receiver receiver;
-    private static Sender sender;
     private static int port;
     private static InetAddress ipAddress;
-    public static int peerID;
-    public int mcPort;
-    public InetAddress mcAddress;
-    public int mdbPort;
-    public InetAddress mdbAddress;
-    public int mdrPort;
-    public InetAddress mdrAddress;
-    private DatagramSocket socket;
+    private static int peerID;
+    private int mcPort;
+    private InetAddress mcAddress;
+    private int mdbPort;
+    private InetAddress mdbAddress;
+    private int mdrPort;
+    private InetAddress mdrAddress;
 
     public static void main(String args[]) throws SocketException, UnknownHostException {
         double protocolVersion = Double.parseDouble(args[0]);
 
         splitAP(args[2]);
-        Peer peer = new Peer(Integer.parseInt(args[1]),args[3],Integer.parseInt(args[4]) ,args[5], Integer.parseInt(args[6]), args[7], Integer.parseInt(args[8]));
+        new Peer(Integer.parseInt(args[1]),args[3],Integer.parseInt(args[4]) ,args[5], Integer.parseInt(args[6]), args[7], Integer.parseInt(args[8]));
     }
 
     public Peer(int peerID, String mcAddress, int mcPort, String mdbAddress, int mdbPort, String mdrAddress, int mdrPort) throws SocketException, UnknownHostException {
@@ -50,11 +45,11 @@ public class Peer {
         this.mdrAddress =  InetAddress.getByName(mdrAddress);
         this.mdrPort = mdrPort;
 
-        System.out.println("Peer " + peerID + " has started.");
+        new File("Peer" + peerID).mkdirs();
 
+        System.out.println("Peer " + peerID + " has started and folder Peer " + peerID +" created. Address and Port are: " + ipAddress.getHostName() + ":"+ port);
         Receiver receiver = new Receiver(this, ipAddress, port);
         receiver.start();
-
         startBackupListener();
         startControlListener();
         startRestoreListener();

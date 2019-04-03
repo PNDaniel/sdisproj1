@@ -17,7 +17,7 @@ public class Control implements Runnable {
     private Thread thread;
 
     public Control(Peer peer){
-        System.out.println("Backup protocol called. ");
+        System.out.println("Control protocol called. ");
 
         this.address = peer.getMcAddress();
         this.port = peer.getMcPort();

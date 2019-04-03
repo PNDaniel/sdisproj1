@@ -18,7 +18,6 @@ public class Receiver implements Runnable {
     private boolean receiverIsRunning;
 
     public Receiver(Peer peer , InetAddress address, int port) throws SocketException {
-        System.out.println("Receiver opened.");
         socket = new DatagramSocket(port);
         this.peer = peer;
     }
@@ -79,7 +78,7 @@ public class Receiver implements Runnable {
     }
 
     public Thread start() {
-        System.out.println("Receiver Runnable has started.");
+        System.out.println("Receiver Runnable opened and started.");
         if (thread == null) {
             thread = new Thread (this, "threadReceiver");
             thread.start();
