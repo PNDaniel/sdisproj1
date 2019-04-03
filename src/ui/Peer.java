@@ -60,8 +60,8 @@ public class Peer {
         ArrayList<byte[]> fileToSend = breakFileToSend(filename);
         String hashedFileName = hashEncoder(filename);
         try (MulticastSocket socket = new MulticastSocket(mdbPort)) {
-          //  socket.setLoopbackMode(true);
             socket.joinGroup(mdbAddress);
+            //  socket.setLoopbackMode(true);
             Message msg = new Message("PUTCHUNK", 1.0,this.getPeerID(), hashedFileName );
             for (int i = 0; i < fileToSend.size() ; i++){
                 buf = fileToSend.get(i);
@@ -76,8 +76,8 @@ public class Peer {
 
     public void sendStored(String filename){
         try (MulticastSocket socket = new MulticastSocket(mcPort)) {
-            //  socket.setLoopbackMode(true);
             socket.joinGroup(mcAddress);
+          //  socket.setLoopbackMode(true);
             Message msg = new Message("STORED", 1.0,this.getPeerID(), filename);
             String msgToSend = msg.createStoredMessage(1);
             //DatagramPacket msgPacket = new DatagramPacket(msgToSend.getBytes(), msgToSend.getBytes().length, this.getIp(), this.getPort());
@@ -154,13 +154,8 @@ public class Peer {
             int bytesAmount = 0;
             while ((bytesAmount = bis.read(buffer)) > 0) {
                 listOfFiles.add(Arrays.copyOf(buffer, bytesAmount));
-                //write each chunk of data into separate file with different number in name
                 String filePartName = String.format("%s Number: %03d", filepath, partCounter++);
                 System.out.println(filePartName + " Size: " + bytesAmount);
-                //    File newFile = new File(file.getParent(), filePartName);
-//                try (FileOutputStream out = new FileOutputStream(newFile)) {
-//                    out.write(buffer, 0, bytesAmount);
-//                }
             }
         } catch (IOException e) {
             e.printStackTrace();
@@ -169,7 +164,7 @@ public class Peer {
             byte[] lastItem= new byte[0];
             listOfFiles.add(lastItem);
         }
-        System.out.println("Ora bem: " + listOfFiles.size());
+        System.out.println("Total Chunks: " + listOfFiles.size() + ", total size of file " + file.length() + " bytes.");
         return listOfFiles;
     }
 

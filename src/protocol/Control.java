@@ -29,6 +29,7 @@ public class Control implements Runnable {
         byte[] buf = new byte[256];
         try (MulticastSocket socket = new MulticastSocket(port)) {
             socket.joinGroup(address);
+         //   socket.setLoopbackMode(true);
             while (true) {
                 DatagramPacket packet = new DatagramPacket(buf, buf.length);
                 socket.receive(packet);
@@ -39,7 +40,7 @@ public class Control implements Runnable {
                 if (Integer.parseInt(splitString[2]) != this.peerID) {
                     switch (splitString[0]) {
                         case "STORED":
-                            System.out.println("Stored Message received.");
+                            System.out.println("Store Message received.");
                             break;
                         default:
                             System.out.println("Unknown Message.");
