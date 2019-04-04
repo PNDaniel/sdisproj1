@@ -2,6 +2,7 @@ package protocol;
 
 import ui.Peer;
 
+import java.io.File;
 import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.InetAddress;
@@ -15,8 +16,10 @@ public class Control implements Runnable {
     private InetAddress address;
     private int peerID;
     private Thread thread;
+    private Peer peer;
 
     public Control(Peer peer){
+        this.peer = peer;
         this.address = peer.getMcAddress();
         this.port = peer.getMcPort();
         this.peerID = peer.getPeerID();
@@ -39,6 +42,10 @@ public class Control implements Runnable {
                         case "STORED":
                             System.out.println(new Timestamp(date.getTime())  + " - Store Message received at " + address  + ":" + port + " and it was :\n" + messageReceived.trim());
                             break;
+                        case "DELETE":
+                            System.out.println(messageReceived.trim());
+                            checkFile(splitString[3]);
+                            break;
                         default:
                             System.out.println("Unknown Message.\n" + messageReceived);
                             break;
@@ -47,6 +54,21 @@ public class Control implements Runnable {
             }
         } catch (IOException e) {
             e.printStackTrace();
+        }
+    }
+
+    private void checkFile(String fileID) {
+        File[] listFiles = new File(peer.getPeerFolder()).listFiles();
+        for (File listFile : listFiles) {
+            if (listFile.isFile()) {
+                String fileName = listFile.getName();
+                if (fileName.startsWith(fileID)) {
+                    System.out.println("found file" + " " + fileName);
+                    File file = new File(peer.getPeerFolder()+"\\" + fileName);
+                    System.out.println(file.getAbsolutePath());
+                    file.delete();
+                }
+            }
         }
     }
 

@@ -8,6 +8,8 @@ import java.net.*;
 // :1923 BACKUP C:\Users\Daniel\Downloads\Estatutos_2018_2019_Revisto.pdf 3
 // :1923 BACKUP C:\Users\Daniel\Downloads\Dynamic_Difficulty_Adjustment_on_MOBA_Games.pdf 3
 // 192.168.1.1:1923 BACKUP C:\Users\Daniel\Downloads\teste.txt 3
+
+// :1923 DELETE C:\Users\Daniel\Desktop\Recrutamento.txt
 public class TestApp {
 
     private static Peer peer;

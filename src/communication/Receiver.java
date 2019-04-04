@@ -50,6 +50,7 @@ public class Receiver implements Runnable {
                     case "DELETE":
                         System.out.println("Delete Message received.");
                         returnString = "Delete, gz.".getBytes();
+                        peer.delete(splitString[1]);
                         break;
                     case "RECLAIM":
                         System.out.println("Reclaim Message received.");
