@@ -27,7 +27,7 @@ public class Backup implements Runnable{
 
     @Override
     public void run() {
-        byte[] buf = new byte[256];
+        byte[] buf = new byte[65000];
 
         try (MulticastSocket socket = new MulticastSocket(port)) {
             socket.joinGroup(address);
@@ -43,38 +43,30 @@ public class Backup implements Runnable{
                  */
                 // https://www.mkyong.com/java/how-to-get-current-timestamps-in-java/
 
-                BufferedReader in = new BufferedReader(new InputStreamReader(new ByteArrayInputStream(packet.getData())));
-                String header = in.readLine();
-                System.out.println("Full Header: " + header);
-                int delimiter = header.indexOf(" \\r\\n\\r\\n") + 8;
-                header = header.substring(0, delimiter);
-                System.out.println("WTF: " + header);
-                String[] headerList = header.split(" +");
-                //           System.out.println("Full Header: " + header);
+                String messageReceived = new String(packet.getData(), 0, packet.getLength());
+                String messageReceived1 = new String(packet.getData(), 0, packet.getLength());
+                System.out.println(messageReceived);
+                System.out.println(messageReceived1);
+                String[] splitString = messageReceived.trim().split("\\s+"); // Any number of consecutive spaces in the string are split into tokens.
+//                String[] splitString1 = messageReceived.split("\\s+"); // Any number of consecutive spaces in the string are split into tokens.
+//                System.out.println("Sending:" + splitString1[7]);
+                int delimiter = messageReceived1.indexOf("\\r\\n\\r\\n") + 8;
                 byte[] body = Arrays.copyOfRange(packet.getData(), delimiter, packet.getLength());
-
-
-//                String messageReceived = new String(packet.getData(), 0, packet.getLength());
-//                String[] splitString = messageReceived.trim().split("\\s+"); // Any number of consecutive spaces in the string are split into tokens.
-//                String messageReceived1 = new String(packet.getData(), 0, packet.getLength());
-
-//                int delimiter = messageReceived1.indexOf("\\r\\n\\r\\n") + 8;
-//                byte[] body = Arrays.copyOfRange(packet.getData(), delimiter, packet.getLength());
-//                //System.out.println("PAROU: " + new String(body));
+                System.out.println("PAROU: "+ delimiter + " : " + new String(body));
 
                 System.out.println();
-                if (Integer.parseInt(headerList[2]) != this.peerID) {
-                    switch (headerList[0]) {
+                if (Integer.parseInt(splitString[2]) != this.peerID) {
+                    switch (splitString[0]) {
                         case "PUTCHUNK":
-                            System.out.println(new Timestamp(date.getTime())  + " - Backup Message received at " + address + ":" + port + " and it was :\n" + header.trim());
-                            if(createChunk(headerList[3],Integer.parseInt(headerList[4]),body)){
-                                peer.sendStored(headerList[3], Integer.parseInt(headerList[4]));
+                            System.out.println(new Timestamp(date.getTime())  + " - Backup Message received at " + address + ":" + port + " and it was :\n" + messageReceived.trim());
+                            if(createChunk(splitString[3],Integer.parseInt(splitString[4]),body)){
+                                peer.sendStored(splitString[3], Integer.parseInt(splitString[4]));
                             } else {
                                 System.out.println("Create chunk failed");
                             }
                             break;
                         default:
-                            System.out.println("Unknown Message.\n" + header);
+                            System.out.println("Unknown Message.\n" + messageReceived);
                             break;
                     }
                 }

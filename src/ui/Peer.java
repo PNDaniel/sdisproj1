@@ -67,8 +67,8 @@ public class Peer {
             Message msg = new Message("PUTCHUNK", 1.0,this.getPeerID(), hashedFileName );
             for (int i = 0; i < fileToSend.size() ; i++){
                 buf = fileToSend.get(i);
-                String msgToSend = msg.createPutchunkMessage(i, repDeg, buf);
-                DatagramPacket packet = new DatagramPacket(msgToSend.getBytes(), msgToSend.getBytes().length, mdbAddress, mdbPort);
+                byte[] msgToSend = msg.createPutchunkMessage(i, repDeg, buf);
+                DatagramPacket packet = new DatagramPacket(msgToSend, msgToSend.length, mdbAddress, mdbPort);
                 socket.send(packet);
             }
         } catch (IOException ex) {

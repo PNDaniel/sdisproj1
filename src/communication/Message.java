@@ -27,14 +27,20 @@ public class Message {
         return sb.toString();
     }
 
-    public String createPutchunkMessage(int chunkNo, int repDeg, byte[] body){
+    public byte[] createPutchunkMessage(int chunkNo, int repDeg, byte[] body){
         StringBuilder sb = new StringBuilder(createStandardMessage());
         sb.append(" ");sb.append(chunkNo);
         sb.append(" ");sb.append(repDeg);
         sb.append(" ");sb.append(" \\r\\n\\r\\n");
-        sb.append(" ");sb.append(body);
+        sb.append(" ");
+        //sb.append(body);
+        byte[] putchunkHeader = sb.toString().getBytes();
+        byte[] bytes = new byte[putchunkHeader.length + body.length];
 
-        return sb.toString();
+        System.arraycopy(putchunkHeader, 0, bytes, 0, putchunkHeader.length);
+        System.arraycopy(body, 0, bytes, putchunkHeader.length, body.length);
+
+        return bytes;
     }
 
     public String createStoredMessage(int chunkNo){
