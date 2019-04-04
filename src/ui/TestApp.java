@@ -1,17 +1,12 @@
 package ui;
 
-import communication.Message;
-
 import java.io.*;
-import java.lang.reflect.Array;
 import java.net.*;
-import java.sql.Timestamp;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Date;
 
-
-// Usar para Testes : :1923 BACKUP C:\Users\Daniel\Desktop\Recrutamento.txt 3
+// Usar para Testes :
+// :1923 BACKUP C:\Users\Daniel\Desktop\Recrutamento.txt 3
+// :1923 BACKUP C:\Users\Daniel\Downloads\Estatutos_2018_2019_Revisto.pdf 3
+// :1923 BACKUP C:\Users\Daniel\Downloads\Dynamic_Difficulty_Adjustment_on_MOBA_Games.pdf 3
 // 192.168.1.1:1923 BACKUP C:\Users\Daniel\Downloads\teste.txt 3
 public class TestApp {
 

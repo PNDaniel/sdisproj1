@@ -19,9 +19,10 @@ import java.util.Arrays;
 
 public class Peer {
 
-    private static int port;
-    private static InetAddress ipAddress;
+    private static int peerPort;
+    private static InetAddress peerAddress;
     private static int peerID;
+    private String peerFolder;
     private int mcPort;
     private InetAddress mcAddress;
     private int mdbPort;
@@ -45,17 +46,18 @@ public class Peer {
         this.mdrAddress =  InetAddress.getByName(mdrAddress);
         this.mdrPort = mdrPort;
 
-        new File("Peer" + peerID).mkdirs();
+        peerFolder = "Peer" + peerID;
+        new File(peerFolder).mkdirs();
 
-        System.out.println("Peer " + peerID + " has started and folder Peer " + peerID +" created. Address and Port are: " + ipAddress.getHostName() + ":"+ port);
-        Receiver receiver = new Receiver(this, ipAddress, port);
-        receiver.start();
+        System.out.println("Peer " + peerID + " has started and folder Peer " + peerID +" created. Address and Port are: " + peerAddress.getHostName() + ":"+ peerPort);
+        Receiver testAppReceiver = new Receiver(this, peerAddress, peerPort);
+        testAppReceiver.start();
         startBackupListener();
         startControlListener();
         startRestoreListener();
     }
 
-    public void sendPutchunk(String filename){
+    public void sendPutchunk(String filename, int repDeg){
         byte[] buf = new byte[64000];
         ArrayList<byte[]> fileToSend = breakFileToSend(filename);
         String hashedFileName = hashEncoder(filename);
@@ -65,7 +67,7 @@ public class Peer {
             Message msg = new Message("PUTCHUNK", 1.0,this.getPeerID(), hashedFileName );
             for (int i = 0; i < fileToSend.size() ; i++){
                 buf = fileToSend.get(i);
-                String msgToSend = msg.createChunkMessage(i,buf);
+                String msgToSend = msg.createPutchunkMessage(i, repDeg, buf);
                 DatagramPacket packet = new DatagramPacket(msgToSend.getBytes(), msgToSend.getBytes().length, mdbAddress, mdbPort);
                 socket.send(packet);
             }
@@ -74,12 +76,12 @@ public class Peer {
         }
     }
 
-    public void sendStored(String filename){
+    public void sendStored(String filename, int chunkNo){
         try (MulticastSocket socket = new MulticastSocket(mcPort)) {
             socket.joinGroup(mcAddress);
           //  socket.setLoopbackMode(true);
             Message msg = new Message("STORED", 1.0,this.getPeerID(), filename);
-            String msgToSend = msg.createStoredMessage(1);
+            String msgToSend = msg.createStoredMessage(chunkNo);
             //DatagramPacket msgPacket = new DatagramPacket(msgToSend.getBytes(), msgToSend.getBytes().length, this.getIp(), this.getPort());
             DatagramPacket msgPacket = new DatagramPacket(msgToSend.getBytes(), msgToSend.getBytes().length, mcAddress, mcPort);
             socket.send(msgPacket);
@@ -113,31 +115,6 @@ public class Peer {
         return hexString.toString();
     }
 
-//    public void backup(ArrayList<byte[]> listOfFiles, int repDeg) throws SocketException {
-//        try (MulticastSocket socket = new MulticastSocket(port)) {
-//            byte[] buf = new byte[65000];
-//            InetAddress address = InetAddress.getByName(ipAddress);
-//            socket.joinGroup(address);
-//            for(int i = 0; i < listOfFiles.size(); i++) {
-//                DatagramPacket packet = new DatagramPacket(listOfFiles.get(i), listOfFiles.get(i).length, address, port);
-//                Date date = new Date();
-//                socket.send(packet);
-//                System.out.println(new Timestamp(date.getTime()) + " chunk was sent.");
-//            }
-//
-//            DatagramPacket packet = new DatagramPacket(buf, buf.length);
-//            socket.receive(packet);
-//            String received = new String(packet.getData(), 0, packet.getLength());
-//            System.out.println(received);
-//        } catch (UnknownHostException e) {
-//            // TODO Auto-generated catch block
-//            e.printStackTrace();
-//        } catch (IOException e) {
-//            // TODO Auto-generated catch block
-//            e.printStackTrace();
-//        }
-//    }
-
     //TODO https://netjs.blogspot.com/2017/04/reading-all-files-in-folder-java-program.html
 
     // https://www.mkyong.com/java/how-to-get-file-size-in-java/
@@ -158,6 +135,7 @@ public class Peer {
                 System.out.println(filePartName + " Size: " + bytesAmount);
             }
         } catch (IOException e) {
+            System.out.println("File name was incorrect. Check Path or filename.");
             e.printStackTrace();
         }
         if(listOfFiles.get(listOfFiles.size() - 1).length == 64000){
@@ -172,7 +150,7 @@ public class Peer {
         String address;
         if(args.contains(":")){
             String[] output = args.split("\\:");
-            port = Integer.parseInt(output[1]);
+            peerPort = Integer.parseInt(output[1]);
             if( output[0].length()== 0){
                 address = "localhost";
             }
@@ -181,11 +159,11 @@ public class Peer {
             }
         }
         else {
-            port = Integer.parseInt(args);
+            peerPort = Integer.parseInt(args);
             address = "localhost";
         }
-        ipAddress = InetAddress.getByName(address);
-        System.out.println("IpAddress: " +  address + " and Port Number is: " + port);
+        peerAddress = InetAddress.getByName(address);
+        System.out.println("IpAddress: " +  address + " and Port Number is: " + peerPort);
     }
 
     private void startBackupListener() throws SocketException {
@@ -204,6 +182,10 @@ public class Peer {
 
     public int getPeerID() {
         return peerID;
+    }
+
+    public String getPeerFolder(){
+        return  peerFolder;
     }
 
     public int getMcPort() {

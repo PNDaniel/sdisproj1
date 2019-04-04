@@ -17,8 +17,6 @@ public class Control implements Runnable {
     private Thread thread;
 
     public Control(Peer peer){
-        System.out.println("Control protocol called. ");
-
         this.address = peer.getMcAddress();
         this.port = peer.getMcPort();
         this.peerID = peer.getPeerID();
@@ -35,15 +33,14 @@ public class Control implements Runnable {
                 socket.receive(packet);
                 Date date = new Date();
                 String messageReceived= new String(packet.getData(), 0, packet.getLength());
-                System.out.println("TimeStamp: " + new Timestamp(date.getTime()) +" ----- " + messageReceived);
                 String[] splitString = messageReceived.trim().split("\\s+"); // Any number of consecutive spaces in the string are split into tokens.
                 if (Integer.parseInt(splitString[2]) != this.peerID) {
                     switch (splitString[0]) {
                         case "STORED":
-                            System.out.println("Store Message received.");
+                            System.out.println(new Timestamp(date.getTime())  + " - Store Message received at " + address  + ":" + port + " and it was :\n" + messageReceived.trim());
                             break;
                         default:
-                            System.out.println("Unknown Message.");
+                            System.out.println("Unknown Message.\n" + messageReceived);
                             break;
                     }
                 }
@@ -54,7 +51,7 @@ public class Control implements Runnable {
     }
 
     public Thread start() {
-        System.out.println("Control Thread has started.");
+        System.out.println("Control protocol called (at " + address +":"+ port + ") and its Thread has started. ");
         if (thread == null) {
             thread = new Thread (this, "controlThread");
             thread.start();

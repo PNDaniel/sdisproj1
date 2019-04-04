@@ -31,16 +31,9 @@ public class Receiver implements Runnable {
             try {
                 socket.receive(packet);
                 Date date = new Date();
-                /* https://stackoverflow.com/questions/351565/system-currenttimemillis-vs-system-nanotime
-                 * NanoTime is more expensive for the CPU.
-                 * long startTime = System.nanoTime();
-                 * long estimatedTime = System.nanoTime() - startTime;
-                 */
-                // https://www.mkyong.com/java/how-to-get-current-timestamps-in-java/
                 String messageReceived= new String(packet.getData(), 0, packet.getLength());
-                System.out.println("TimeStamp: " + new Timestamp(date.getTime()) +" |Order from TestApp: " + messageReceived);
+                System.out.println("TimeStamp: " + new Timestamp(date.getTime()) + " |TestAPP Order: " + messageReceived);
                 String[] splitString = messageReceived.trim().split("\\s+"); // Any number of consecutive spaces in the string are split into tokens.
-                // https://stackoverflow.com/questions/2220400/how-do-i-make-my-string-comparison-case-insensitive
                 byte[] returnString;
                 DatagramPacket returnPacket;
                 switch (splitString[0])
@@ -48,7 +41,7 @@ public class Receiver implements Runnable {
                     case "BACKUP":
                         System.out.println("Backup Message received.");
                         returnString = "Backup, gz.".getBytes();
-                        peer.sendPutchunk(splitString[1]);
+                        peer.sendPutchunk(splitString[1], Integer.parseInt(splitString[2]));
                         break;
                     case "RESTORE":
                         System.out.println("Restore Message received.");

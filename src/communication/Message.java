@@ -31,7 +31,7 @@ public class Message {
         StringBuilder sb = new StringBuilder(createStandardMessage());
         sb.append(" ");sb.append(chunkNo);
         sb.append(" ");sb.append(repDeg);
-        sb.append(" ");sb.append("\r\n\r\n");
+        sb.append(" ");sb.append(" \\r\\n\\r\\n");
         sb.append(" ");sb.append(body);
 
         return sb.toString();
@@ -40,7 +40,7 @@ public class Message {
     public String createStoredMessage(int chunkNo){
         StringBuilder sb = new StringBuilder(createStandardMessage());
         sb.append(" ");sb.append(chunkNo);
-        sb.append(" ");sb.append("\r\n\r\n");
+        sb.append(" ");sb.append(" \\r\\n\\r\\n");
 
         return sb.toString();
     }
