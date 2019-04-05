@@ -42,8 +42,9 @@ public class Control implements Runnable {
                         case "STORED":
                             System.out.println(new Timestamp(date.getTime())  + " - Store Message received at " + address  + ":" + port + " and it was :\n" + messageReceived.trim());
                             break;
-                        case "RESTORE":
+                        case "GETCHUNK":
                             System.out.println(messageReceived.trim());
+                            peer.sendChunk(splitString[3]);
                             break;
                         case "DELETE":
                             System.out.println(messageReceived.trim());
@@ -51,18 +52,18 @@ public class Control implements Runnable {
                             // TODO This message does not elicit any response message. An implementation may send this message as many times as it is deemed necessary to ensure that all space used by chunks of the deleted file are deleted in spite of the loss of some messages.
                             //
                             // TODO Enhancement: If a peer that backs up some chunks of the file is not running at the time the initiator peer sends a DELETE message for that file,
-                            //  the space used by these chunks will never be reclaimed. Think of a change to the protocol, possibly including additional messages, that would allow to reclaim storage space even in that event?
+                            //  the space used by these chunks will never be reclaimed. Cange to the protocol, possibly including additional messages, allowing to reclaim storage space even in that event?
 //                            if(checkFile(splitString[3])){
 //                                String msgToSend =  "DELETE";
 //                                DatagramPacket msgPacket = new DatagramPacket(msgToSend.getBytes(), msgToSend.getBytes().length, peer.getMcAddress(), peer.getMcPort());
 //                                socket.send(msgPacket);
 //                            }
                             break;
-                        case "RECLAIM":
+                        case "REMOVE":
                             System.out.println(messageReceived.trim());
                             break;
                         default:
-                            System.out.println("Unknown Message.\n" + messageReceived);
+                            System.out.println("Unknown Message in MC.\n" + messageReceived);
                             break;
                     }
                 }

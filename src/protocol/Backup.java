@@ -66,7 +66,7 @@ public class Backup implements Runnable{
                             }
                             break;
                         default:
-                            System.out.println("Unknown Message.\n" + messageReceived);
+                            System.out.println("Unknown Message in MDB.\n" + messageReceived);
                             break;
                     }
                 }

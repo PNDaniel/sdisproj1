@@ -18,7 +18,7 @@ public class Message {
     }
 
     private String createStandardMessage(){
-        StringBuilder sb = new StringBuilder(protocol.toString());
+        StringBuilder sb = new StringBuilder(protocol);
         Support support = new Support();
         sb.append(" ");sb.append(support.getVersion());
         sb.append(" ");sb.append(senderID);
@@ -59,13 +59,18 @@ public class Message {
         return sb.toString();
     }
 
-    public String createChunkMessage(int chunkNo, byte[] body){
+    public byte[] createChunkMessage(int chunkNo, byte[] body){
         StringBuilder sb = new StringBuilder(createStandardMessage());
         sb.append(" ");sb.append(chunkNo);
         sb.append(" ");sb.append("\r\n\r\n");
-        sb.append(" ");sb.append(body);
+        sb.append(" ");
+        byte[] putchunkHeader = sb.toString().getBytes();
+        byte[] bytes = new byte[putchunkHeader.length + body.length];
 
-        return sb.toString();
+        System.arraycopy(putchunkHeader, 0, bytes, 0, putchunkHeader.length);
+        System.arraycopy(body, 0, bytes, putchunkHeader.length, body.length);
+
+        return bytes;
     }
 
     public String createDeleteMessage(){

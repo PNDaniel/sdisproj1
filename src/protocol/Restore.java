@@ -19,8 +19,8 @@ public class Restore implements Runnable {
 
     public Restore(Peer peer){
         this.peer = peer;
-        this.address = peer.getMcAddress();
-        this.port = peer.getMcPort();
+        this.address = peer.getMdrAddress();
+        this.port = peer.getMdrPort();
         this.peerID = peer.getPeerID();
     }
 
@@ -38,11 +38,11 @@ public class Restore implements Runnable {
                 String[] splitString = messageReceived.trim().split("\\s+"); // Any number of consecutive spaces in the string are split into tokens.
                 if (Integer.parseInt(splitString[2]) != this.peerID) {
                     switch (splitString[0]) {
-                        case "GETCHUNK":
+                        case "CHUNK":
                             System.out.println(new Timestamp(date.getTime())  + " - Store Message received at " + address  + ":" + port + " and it was :\n" + messageReceived.trim());
                             break;
                         default:
-                            System.out.println("Unknown Message.\n" + messageReceived);
+                            System.out.println("Unknown Message in MDR.\n" + messageReceived);
                             break;
                     }
                 }

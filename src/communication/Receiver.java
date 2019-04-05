@@ -45,7 +45,7 @@ public class Receiver implements Runnable {
                         break;
                     case "RESTORE":
                         System.out.println("Restore Message received.");
-                        peer.sendPutchunk(splitString[1],0);
+                        peer.sendGetChunk(splitString[1]);
                         returnString = "Restore, gz.".getBytes();
                         break;
                     case "DELETE":
