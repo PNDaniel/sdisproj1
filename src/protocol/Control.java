@@ -44,7 +44,7 @@ public class Control implements Runnable {
                             break;
                         case "GETCHUNK":
                             System.out.println(messageReceived.trim());
-                            peer.sendChunk(splitString[3]);
+                            peer.sendChunk(splitString[3], Integer.parseInt(splitString[4]));
                             break;
                         case "DELETE":
                             System.out.println(messageReceived.trim());

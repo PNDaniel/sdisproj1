@@ -110,25 +110,31 @@ public class Peer {
         }
     }
 
-    public void sendChunk(String filename){
+    public void sendChunk(String filename, int chunkNo){
         byte[] buf = new byte[64000];
         try (MulticastSocket socket = new MulticastSocket(mcPort)) {
             socket.joinGroup(mcAddress);
             //  socket.setLoopbackMode(true);
             Message msg = new Message("CHUNK", 1.0,this.getPeerID(), filename);
-            int chunkNumber = readFolder(filename);
-            if(chunkNumber == -1){
-                System.out.println("This Peer doesn't have chunks of file " + filename);
-            }
-            else{
-                for (int i = 0; i < chunkNumber; i++) {
-                    buf = readChunk(filename,i);
-                    byte[] msgToSend = msg.createChunkMessage(i, buf);
-                    System.out.println(new String(msgToSend));
-                    DatagramPacket packet = new DatagramPacket(msgToSend, msgToSend.length, mdrAddress, mdrPort);
-                    socket.send(packet);
-                }
-            }
+            buf = readChunk(filename, chunkNo);
+            byte[] msgToSend = msg.createChunkMessage(chunkNo, buf);
+       //     System.out.println(new String(msgToSend));
+            DatagramPacket packet = new DatagramPacket(msgToSend, msgToSend.length, mdrAddress, mdrPort);
+            socket.send(packet);
+//            int chunkNumber = readFolder(filename);
+//            if(chunkNumber == -1){
+//                System.out.println("This Peer doesn't have chunks of file " + filename);
+//            }
+//            else{
+//                System.out.println("Number ofChunks:" + chunkNumber);
+//                for (int i = 0; i < chunkNumber; i++) {
+//                    buf = readChunk(filename,i);
+//                    byte[] msgToSend = msg.createChunkMessage(i, buf);
+//                    System.out.println(new String(msgToSend));
+//                    DatagramPacket packet = new DatagramPacket(msgToSend, msgToSend.length, mdrAddress, mdrPort);
+//                    socket.send(packet);
+//                }
+//            }
         } catch (IOException ex) {
             ex.printStackTrace();
         }
@@ -162,6 +168,10 @@ public class Peer {
         fis.read(body);
         fis.close();
         return body;
+    }
+
+    public void buildFile(ArrayList<byte[]> receivedChunks){
+
     }
 
     public void delete(String filename){

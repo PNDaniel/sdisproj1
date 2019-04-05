@@ -6,6 +6,7 @@ import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.InetAddress;
 import java.net.MulticastSocket;
+import java.util.ArrayList;
 import java.util.Date;
 import java.sql.Timestamp;
 
@@ -26,11 +27,13 @@ public class Restore implements Runnable {
 
     @Override
     public void run() {
-        byte[] buf = new byte[256];
+        byte[] buf = new byte[65000];
+        int counter = 0;
         try (MulticastSocket socket = new MulticastSocket(port)) {
             socket.joinGroup(address);
             //   socket.setLoopbackMode(true);
             while (true) {
+
                 DatagramPacket packet = new DatagramPacket(buf, buf.length);
                 socket.receive(packet);
                 Date date = new Date();
@@ -39,7 +42,9 @@ public class Restore implements Runnable {
                 if (Integer.parseInt(splitString[2]) != this.peerID) {
                     switch (splitString[0]) {
                         case "CHUNK":
-                            System.out.println(new Timestamp(date.getTime())  + " - Store Message received at " + address  + ":" + port + " and it was :\n" + messageReceived.trim());
+                            System.out.println(++counter);
+                            System.out.println(new Timestamp(date.getTime())  + " - Chunk Message received at " + address  + ":" + port + " and it was :\n" + messageReceived.trim());
+                          //  peer.buildFile(new ArrayList<byte[]>());
                             break;
                         default:
                             System.out.println("Unknown Message in MDR.\n" + messageReceived);

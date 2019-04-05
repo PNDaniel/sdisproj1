@@ -45,14 +45,11 @@ public class Backup implements Runnable{
 
                 String messageReceived = new String(packet.getData(), 0, packet.getLength());
                 String messageReceived1 = new String(packet.getData(), 0, packet.getLength());
-                System.out.println(messageReceived);
-                System.out.println(messageReceived1);
                 String[] splitString = messageReceived.trim().split("\\s+"); // Any number of consecutive spaces in the string are split into tokens.
 //                String[] splitString1 = messageReceived.split("\\s+"); // Any number of consecutive spaces in the string are split into tokens.
 //                System.out.println("Sending:" + splitString1[7]);
                 int delimiter = messageReceived1.indexOf("\\r\\n\\r\\n") + 8;
                 byte[] body = Arrays.copyOfRange(packet.getData(), delimiter, packet.getLength());
-                System.out.println("PAROU: "+ delimiter + " : " + new String(body));
 
                 System.out.println();
                 if (Integer.parseInt(splitString[2]) != this.peerID) {
