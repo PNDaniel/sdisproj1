@@ -42,9 +42,24 @@ public class Control implements Runnable {
                         case "STORED":
                             System.out.println(new Timestamp(date.getTime())  + " - Store Message received at " + address  + ":" + port + " and it was :\n" + messageReceived.trim());
                             break;
+                        case "RESTORE":
+                            System.out.println(messageReceived.trim());
+                            break;
                         case "DELETE":
                             System.out.println(messageReceived.trim());
                             checkFile(splitString[3]);
+                            // TODO This message does not elicit any response message. An implementation may send this message as many times as it is deemed necessary to ensure that all space used by chunks of the deleted file are deleted in spite of the loss of some messages.
+                            //
+                            // TODO Enhancement: If a peer that backs up some chunks of the file is not running at the time the initiator peer sends a DELETE message for that file,
+                            //  the space used by these chunks will never be reclaimed. Think of a change to the protocol, possibly including additional messages, that would allow to reclaim storage space even in that event?
+//                            if(checkFile(splitString[3])){
+//                                String msgToSend =  "DELETE";
+//                                DatagramPacket msgPacket = new DatagramPacket(msgToSend.getBytes(), msgToSend.getBytes().length, peer.getMcAddress(), peer.getMcPort());
+//                                socket.send(msgPacket);
+//                            }
+                            break;
+                        case "RECLAIM":
+                            System.out.println(messageReceived.trim());
                             break;
                         default:
                             System.out.println("Unknown Message.\n" + messageReceived);
@@ -57,8 +72,12 @@ public class Control implements Runnable {
         }
     }
 
-    private void checkFile(String fileID) {
+    private boolean checkFile(String fileID) {
         File[] listFiles = new File(peer.getPeerFolder()).listFiles();
+        if (listFiles == null){
+            System.out.println("This folder name does not exist.");
+            return false;
+        }
         for (File listFile : listFiles) {
             if (listFile.isFile()) {
                 String fileName = listFile.getName();
@@ -66,10 +85,11 @@ public class Control implements Runnable {
                     System.out.println("found file" + " " + fileName);
                     File file = new File(peer.getPeerFolder()+"\\" + fileName);
                     System.out.println(file.getAbsolutePath());
-                    file.delete();
+                    return file.delete();
                 }
             }
         }
+        return false;
     }
 
     public Thread start() {
@@ -81,5 +101,4 @@ public class Control implements Runnable {
         }
         return thread;
     }
-
 }

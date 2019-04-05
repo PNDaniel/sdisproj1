@@ -90,6 +90,20 @@ public class Peer {
         }
     }
 
+    public void sendGetChunk(String filename, int chunkNo){
+        try (MulticastSocket socket = new MulticastSocket(mcPort)) {
+            socket.joinGroup(mcAddress);
+            //  socket.setLoopbackMode(true);
+            Message msg = new Message("GETCHUNK", 1.0,this.getPeerID(), filename);
+            String msgToSend = msg.createStoredMessage(chunkNo);
+            //DatagramPacket msgPacket = new DatagramPacket(msgToSend.getBytes(), msgToSend.getBytes().length, this.getIp(), this.getPort());
+            DatagramPacket msgPacket = new DatagramPacket(msgToSend.getBytes(), msgToSend.getBytes().length, mcAddress, mcPort);
+            socket.send(msgPacket);
+        } catch (IOException ex) {
+            ex.printStackTrace();
+        }
+    }
+
     public void delete(String filename){
         try (MulticastSocket socket = new MulticastSocket(mcPort)) {
             socket.joinGroup(mcAddress);
