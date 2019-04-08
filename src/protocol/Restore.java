@@ -10,6 +10,8 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
 import java.sql.Timestamp;
+import java.util.Random;
+import java.util.concurrent.ThreadLocalRandom;
 
 public class Restore implements Runnable {
 
@@ -47,8 +49,10 @@ public class Restore implements Runnable {
                     switch (splitString[0]) {
                         case "CHUNK":
                             if(this.peerID == peer.getInitiatorPeer()) {
-                                System.out.println(new Timestamp(date.getTime())  + " - Chunk Message received at " + address  + ":" + port + " and it was :\n" + messageReceived.trim());
+                              //  Thread.sleep(ThreadLocalRandom.current().nextInt(401));
+                                //System.out.println(new Timestamp(date.getTime())  + " - Chunk Message received at " + address  + ":" + port + " and it was :\n" + messageReceived.trim());
                                 byte[] body = Arrays.copyOfRange(packet.getData(), delimiter, packet.getLength());
+                                System.out.println(new String(body).trim());
                                 peer.buildFile(body, Integer.parseInt(splitString[4]));
                             } else {
                                 System.out.println("This is not the initiator Peer.");

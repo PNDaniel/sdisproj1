@@ -12,8 +12,9 @@ import java.net.*;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
-import java.util.ArrayList;
-import java.util.Arrays;
+import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 public class Peer {
 
@@ -111,7 +112,8 @@ public class Peer {
             //  socket.setLoopbackMode(true);
             String hashedFileName = hashEncoder(filename);
             chunksToRestore = db.getFileChunksNumber(filename);
-            chunkList = new ArrayList<>(chunksToRestore);
+       //     chunkList = new ArrayList<>(chunksToRestore);
+       //     list1 = new CopyOnWriteArrayList<>(chunkList);
             fileToRestore = filename;
             setInitiatorPeer(this.getPeerID());
             Message msg = new Message("GETCHUNK", 1.0,this.getPeerID(), hashedFileName);
@@ -150,28 +152,91 @@ public class Peer {
         return body;
     }
 
-    private ArrayList<byte[]> chunkList;
-    public void buildFile(byte[] receivedBody, int chunkNo){
-        if(!chunkList.contains(receivedBody)){
-            chunkList.add(chunkNo,receivedBody);
-        } else {
-            System.out.println("Already received chunk number " + chunkNo);
+    private ConcurrentHashMap<Integer, byte[]> chunkList = new ConcurrentHashMap<>();
+    public void buildFile(byte[] receivedBody, int chunkNo) throws IOException {
+        if(chunkList.size() == 0){
+            chunkList.put(chunkNo, receivedBody);
         }
-        if (chunksToRestore == chunkList.size()){
-            FileOutputStream fos;
-            try {
-                fos = new FileOutputStream(fileToRestore,true);
-                for (int i = 0; i < chunksToRestore; i++){
-                    System.out.println("Writing chunk " + i);
-                    fos.write(chunkList.get(i));
-                    fos.flush();
-                }
-                fos.close();
-            }catch (Exception exception){
-                exception.printStackTrace();
+        Iterator<Integer> it = chunkList.keySet().iterator();
+        while(it.hasNext()){
+            int key = it.next();
+            if(! (key == chunkNo)){
+                chunkList.put(chunkNo, receivedBody);
             }
         }
+        if(chunkList.size() == chunksToRestore){
+            System.out.println("Initiator Peer has all the chunks, restoring file. " + chunkList.size());
+            FileOutputStream out = new FileOutputStream(fileToRestore);
+            it = chunkList.keySet().iterator();
+            while(it.hasNext()){
+                int key = it.next();
+                System.out.println("Writing chunk " + key);
+                out.write(chunkList.get(key));
+            }
+            out.close();
+            chunkList.clear();
+        }
     }
+
+    //   private ArrayList<byte[]> chunkList;
+    // private List<byte[]> list1 = new CopyOnWriteArrayList<>();
+    //   private CopyOnWriteArrayList<byte[]> list1 = new CopyOnWriteArrayList<>();
+//    public void buildFile(byte[] receivedBody, int chunkNo){
+//        if(!list1.contains(receivedBody)){
+//            list1.addIfAbsent(receivedBody);
+//            System.out.println("Added number " + chunkNo);
+//        }else {
+//            System.out.println("Already received chunk number " + chunkNo);
+//        }
+//        if (chunksToRestore == list1.size()){
+//            FileOutputStream fos;
+//            try {
+//                fos = new FileOutputStream(fileToRestore,true);
+//                for (int i = 0; i < chunksToRestore; i++){
+//                    System.out.println("Writing chunk " + i);
+//                    fos.write(list1.get(i));
+//                    fos.flush();
+//                }
+//                fos.close();
+//            }catch (Exception exception){
+//                exception.printStackTrace();
+//            }
+//        }
+//    }
+
+//    public void buildFile(byte[] receivedBody, int chunkNo){
+//
+////        synchronized(list) {
+////            for (byte[] o : list)
+////            {
+////
+////            }
+////        }
+//        if(list1.contains(receivedBody)){
+//            list1.add(chunkNo,receivedBody);
+//        }else {
+//            System.out.println("Already received chunk number " + chunkNo);
+//        }
+////        if(!chunkList.contains(receivedBody)){
+////            chunkList.add(chunkNo,receivedBody);
+////        } else {
+////            System.out.println("Already received chunk number " + chunkNo);
+////        }
+//        if (chunksToRestore == chunkList.size()){
+//            FileOutputStream fos;
+//            try {
+//                fos = new FileOutputStream(fileToRestore,true);
+//                for (int i = 0; i < chunksToRestore; i++){
+//                    System.out.println("Writing chunk " + i);
+//                    fos.write(chunkList.get(i));
+//                    fos.flush();
+//                }
+//                fos.close();
+//            }catch (Exception exception){
+//                exception.printStackTrace();
+//            }
+//        }
+//    }
 
     public void delete(String filename){
         try (MulticastSocket socket = new MulticastSocket(mcPort)) {

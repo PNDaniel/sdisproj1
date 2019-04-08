@@ -32,7 +32,6 @@ public class Message {
         sb.append(" ");sb.append(chunkNo);
         sb.append(" ");sb.append(repDeg);
         sb.append(" ");sb.append("\\r\\n\\r\\n");
-        sb.append(" ");
         byte[] putchunkHeader = sb.toString().getBytes();
         byte[] bytes = new byte[putchunkHeader.length + body.length];
 
@@ -62,7 +61,6 @@ public class Message {
         StringBuilder sb = new StringBuilder(createStandardMessage());
         sb.append(" ");sb.append(chunkNo);
         sb.append(" ");sb.append("\\r\\n\\r\\n");
-        sb.append(" ");
         byte[] putchunkHeader = sb.toString().getBytes();
         byte[] bytes = new byte[putchunkHeader.length + body.length];
 
