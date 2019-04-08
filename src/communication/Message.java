@@ -31,9 +31,8 @@ public class Message {
         StringBuilder sb = new StringBuilder(createStandardMessage());
         sb.append(" ");sb.append(chunkNo);
         sb.append(" ");sb.append(repDeg);
-        sb.append(" ");sb.append(" \\r\\n\\r\\n");
+        sb.append(" ");sb.append("\\r\\n\\r\\n");
         sb.append(" ");
-        //sb.append(body);
         byte[] putchunkHeader = sb.toString().getBytes();
         byte[] bytes = new byte[putchunkHeader.length + body.length];
 
@@ -46,7 +45,7 @@ public class Message {
     public String createStoredMessage(int chunkNo){
         StringBuilder sb = new StringBuilder(createStandardMessage());
         sb.append(" ");sb.append(chunkNo);
-        sb.append(" ");sb.append(" \\r\\n\\r\\n");
+        sb.append(" ");sb.append("\\r\\n\\r\\n");
 
         return sb.toString();
     }
@@ -54,7 +53,7 @@ public class Message {
     public String createGetChunkMessage(int chunkNo){
         StringBuilder sb = new StringBuilder(createStandardMessage());
         sb.append(" ");sb.append(chunkNo);
-        sb.append(" ");sb.append("\r\n\r\n");
+        sb.append(" ");sb.append("\\r\\n\\r\\n");
 
         return sb.toString();
     }
@@ -62,7 +61,7 @@ public class Message {
     public byte[] createChunkMessage(int chunkNo, byte[] body){
         StringBuilder sb = new StringBuilder(createStandardMessage());
         sb.append(" ");sb.append(chunkNo);
-        sb.append(" ");sb.append("\r\n\r\n");
+        sb.append(" ");sb.append("\\r\\n\\r\\n");
         sb.append(" ");
         byte[] putchunkHeader = sb.toString().getBytes();
         byte[] bytes = new byte[putchunkHeader.length + body.length];

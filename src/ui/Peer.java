@@ -7,7 +7,6 @@ import protocol.Control;
 import protocol.Restore;
 import utils.Database;
 
-import javax.xml.crypto.Data;
 import java.io.*;
 import java.net.*;
 import java.nio.charset.StandardCharsets;
@@ -47,7 +46,6 @@ public class Peer {
         this.mdrPort = mdrPort;
 
         db = new Database();
-
         peerFolder = "Peer" + peerID;
         new File(peerFolder).mkdirs();
 
@@ -94,13 +92,30 @@ public class Peer {
         }
     }
 
+    private int chunksToRestore;
+    private String fileToRestore;
+    private int initiatorPeer;
+
+    public void setInitiatorPeer(int initiatorPeer) {
+        this.initiatorPeer = initiatorPeer;
+    }
+
+    public int getInitiatorPeer() {
+        return initiatorPeer;
+    }
+
+
     public void sendGetChunk(String filename){
         try (MulticastSocket socket = new MulticastSocket(mcPort)) {
             socket.joinGroup(mcAddress);
             //  socket.setLoopbackMode(true);
             String hashedFileName = hashEncoder(filename);
+            chunksToRestore = db.getFileChunksNumber(filename);
+            chunkList = new ArrayList<>(chunksToRestore);
+            fileToRestore = filename;
+            setInitiatorPeer(this.getPeerID());
             Message msg = new Message("GETCHUNK", 1.0,this.getPeerID(), hashedFileName);
-            for (int i = 0; i < db.getFileChunksNumber(filename); i++) {
+            for (int i = 0; i < chunksToRestore; i++) {
                 String msgToSend = msg.createGetChunkMessage(i);
                 DatagramPacket msgPacket = new DatagramPacket(msgToSend.getBytes(), msgToSend.getBytes().length, mcAddress, mcPort);
                 socket.send(msgPacket);
@@ -111,53 +126,18 @@ public class Peer {
     }
 
     public void sendChunk(String filename, int chunkNo){
-        byte[] buf = new byte[64000];
+        byte[] buf;
         try (MulticastSocket socket = new MulticastSocket(mcPort)) {
             socket.joinGroup(mcAddress);
             //  socket.setLoopbackMode(true);
             Message msg = new Message("CHUNK", 1.0,this.getPeerID(), filename);
             buf = readChunk(filename, chunkNo);
             byte[] msgToSend = msg.createChunkMessage(chunkNo, buf);
-       //     System.out.println(new String(msgToSend));
             DatagramPacket packet = new DatagramPacket(msgToSend, msgToSend.length, mdrAddress, mdrPort);
             socket.send(packet);
-//            int chunkNumber = readFolder(filename);
-//            if(chunkNumber == -1){
-//                System.out.println("This Peer doesn't have chunks of file " + filename);
-//            }
-//            else{
-//                System.out.println("Number ofChunks:" + chunkNumber);
-//                for (int i = 0; i < chunkNumber; i++) {
-//                    buf = readChunk(filename,i);
-//                    byte[] msgToSend = msg.createChunkMessage(i, buf);
-//                    System.out.println(new String(msgToSend));
-//                    DatagramPacket packet = new DatagramPacket(msgToSend, msgToSend.length, mdrAddress, mdrPort);
-//                    socket.send(packet);
-//                }
-//            }
         } catch (IOException ex) {
             ex.printStackTrace();
         }
-    }
-
-    private int readFolder(String filename){
-        File[] listFiles = new File(this.getPeerFolder()).listFiles();
-        if (listFiles == null){
-            System.out.println("This folder name does not exist.");
-            return -1;
-        }
-        int counter = 0;
-
-        for (File listFile : listFiles) {
-            if (listFile.isFile()) {
-                String filepath = listFile.getName();
-                if (filepath.startsWith(filename)) {
-                    System.out.println("found file" + " " + filepath);
-                    counter++ ;
-                }
-            }
-        }
-        return counter;
     }
 
     private byte[] readChunk(String filename, int chunkNo) throws IOException{
@@ -170,8 +150,28 @@ public class Peer {
         return body;
     }
 
-    public void buildFile(ArrayList<byte[]> receivedChunks){
-
+    private ArrayList<byte[]> chunkList;
+    public void buildFile(byte[] receivedBody, int chunkNo){
+        if(!chunkList.contains(receivedBody)){
+            chunkList.add(chunkNo,receivedBody);
+        } else {
+            System.out.println("Already received chunk number " + chunkNo);
+        }
+        if (chunksToRestore == chunkList.size()){
+            FileOutputStream fos;
+            try {
+                System.out.println("Restoring file named: " + fileToRestore);
+                fos = new FileOutputStream(fileToRestore,true);
+                for (int i = 0; i < chunksToRestore; i++){
+                    System.out.println("Writing chunk " + i);
+                    fos.write(chunkList.get(i));
+                    fos.flush();
+                }
+                fos.close();
+            }catch (Exception exception){
+                exception.printStackTrace();
+            }
+        }
     }
 
     public void delete(String filename){
@@ -233,7 +233,7 @@ public class Peer {
                 System.out.println(filePartName + " Size: " + bytesAmount);
             }
         } catch (IOException e) {
-            System.out.println("BackedFile name was incorrect. Check Path or filename.");
+            System.out.println("File name was incorrect. Check Path or filename.");
             e.printStackTrace();
         }
         if(listOfFiles.get(listOfFiles.size() - 1).length == 64000){
