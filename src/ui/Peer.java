@@ -160,7 +160,6 @@ public class Peer {
         if (chunksToRestore == chunkList.size()){
             FileOutputStream fos;
             try {
-                System.out.println("Restoring file named: " + fileToRestore);
                 fos = new FileOutputStream(fileToRestore,true);
                 for (int i = 0; i < chunksToRestore; i++){
                     System.out.println("Writing chunk " + i);
