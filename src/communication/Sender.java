@@ -40,10 +40,8 @@ public class Sender implements Runnable {
                 String received = new String(packet.getData(), 0, packet.getLength());
                 System.out.println(received);
             } catch (UnknownHostException e) {
-                // TODO Auto-generated catch block
                 e.printStackTrace();
             } catch (IOException e) {
-                // TODO Auto-generated catch block
                 e.printStackTrace();
             }
         }

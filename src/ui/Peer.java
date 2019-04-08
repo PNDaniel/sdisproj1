@@ -13,8 +13,7 @@ import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.*;
 
 public class Peer {
 
@@ -64,7 +63,7 @@ public class Peer {
         String hashedFileName = hashEncoder(filename);
         try (MulticastSocket socket = new MulticastSocket(mdbPort)) {
             socket.joinGroup(mdbAddress);
-            //  socket.setLoopbackMode(true);
+            // socket.setLoopbackMode(true);
             Message msg = new Message("PUTCHUNK", 1.0,this.getPeerID(), hashedFileName );
             for (int i = 0; i < fileToSend.size() ; i++){
                 buf = fileToSend.get(i);
@@ -79,19 +78,44 @@ public class Peer {
         }
     }
 
+//    public void sendStored(String filename, int chunkNo){
+//        try (MulticastSocket socket = new MulticastSocket(mcPort)) {
+//            socket.joinGroup(mcAddress);
+//          //  socket.setLoopbackMode(true);
+//            Message msg = new Message("STORED", 1.0,this.getPeerID(), filename);
+//            String msgToSend = msg.createStoredMessage(chunkNo);
+//            //DatagramPacket msgPacket = new DatagramPacket(msgToSend.getBytes(), msgToSend.getBytes().length, this.getIp(), this.getPort());
+//            DatagramPacket msgPacket = new DatagramPacket(msgToSend.getBytes(), msgToSend.getBytes().length, mcAddress, mcPort);
+//            socket.send(msgPacket);
+//        } catch (IOException ex) {
+//            ex.printStackTrace();
+//        }
+//    }
+
+    // Executor Threads done with
+    // https://www.mkyong.com/java/java-scheduledexecutorservice-examples/
+    // https://www.baeldung.com/java-executor-service-tutorial
     public void sendStored(String filename, int chunkNo){
-        try (MulticastSocket socket = new MulticastSocket(mcPort)) {
-            socket.joinGroup(mcAddress);
-          //  socket.setLoopbackMode(true);
-            Message msg = new Message("STORED", 1.0,this.getPeerID(), filename);
-            String msgToSend = msg.createStoredMessage(chunkNo);
-            //DatagramPacket msgPacket = new DatagramPacket(msgToSend.getBytes(), msgToSend.getBytes().length, this.getIp(), this.getPort());
-            DatagramPacket msgPacket = new DatagramPacket(msgToSend.getBytes(), msgToSend.getBytes().length, mcAddress, mcPort);
-            socket.send(msgPacket);
-        } catch (IOException ex) {
-            ex.printStackTrace();
-        }
+        Message msg = new Message("STORED", 1.0,this.getPeerID(), filename);
+        String msgToSend = msg.createStoredMessage(chunkNo);
+        ScheduledExecutorService ses = Executors.newScheduledThreadPool(1);
+        Runnable task2 = () -> {
+                try (MulticastSocket socket = new MulticastSocket(mcPort)) {
+                    socket.joinGroup(mcAddress);
+                    //  socket.setLoopbackMode(true);
+                    //DatagramPacket msgPacket = new DatagramPacket(msgToSend.getBytes(), msgToSend.getBytes().length, this.getIp(), this.getPort());
+                    DatagramPacket msgPacket = new DatagramPacket(msgToSend.getBytes(), msgToSend.getBytes().length, mcAddress, mcPort);
+
+                    socket.send(msgPacket);
+                } catch (IOException ex) {
+                    ex.printStackTrace();
+                }
+            };
+        //run this task after 5 seconds, nonblock for task3
+        ses.schedule(task2, new Random().nextInt(401), TimeUnit.MILLISECONDS);
+        ses.shutdown();
     }
+
 
     private int chunksToRestore;
     private String fileToRestore;
