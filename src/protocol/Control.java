@@ -85,6 +85,7 @@ public class Control implements Runnable {
                 String fileName = listFile.getName();
                 if (fileName.startsWith(fileID)) {
                     System.out.println("found file" + " " + fileName);
+                    // TODO LINUX CHANGE : File file = new File(peer.getPeerFolder()+"/" + fileName);
                     File file = new File(peer.getPeerFolder()+"\\" + fileName);
                     System.out.println(file.getAbsolutePath());
                     return file.delete();

@@ -105,7 +105,6 @@ public class Peer {
                     //  socket.setLoopbackMode(true);
                     //DatagramPacket msgPacket = new DatagramPacket(msgToSend.getBytes(), msgToSend.getBytes().length, this.getIp(), this.getPort());
                     DatagramPacket msgPacket = new DatagramPacket(msgToSend.getBytes(), msgToSend.getBytes().length, mcAddress, mcPort);
-
                     socket.send(msgPacket);
                 } catch (IOException ex) {
                     ex.printStackTrace();

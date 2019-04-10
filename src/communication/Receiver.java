@@ -65,7 +65,6 @@ public class Receiver implements Runnable {
                 returnPacket = new DatagramPacket(returnString, returnString.length, packet.getAddress(), packet.getPort());
              //   socket.send(returnPacket);
             } catch (IOException e) {
-                // TODO Auto-generated catch block
                 e.printStackTrace();
             }
         }
