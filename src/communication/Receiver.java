@@ -57,6 +57,11 @@ public class Receiver implements Runnable {
                         System.out.println("Reclaim Message received.");
                         returnString = "Reclaim, gz.".getBytes();
                         break;
+                    case "STATE":
+                        System.out.println("State Message received.");
+                        peer.state();
+                        returnString = "State, gz.".getBytes();
+                        break;
                     default:
                         System.out.println("Unknown Message.");
                         returnString = "Wrong Message Format.".getBytes();

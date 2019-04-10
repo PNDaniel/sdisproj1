@@ -275,6 +275,18 @@ public class Peer {
         }
     }
 
+    //TODO https://netjs.blogspot.com/2017/04/reading-all-files-in-folder-java-program.html
+    public void state(){
+        File filepath = new File(this.getPeerFolder());
+        File[] folder = filepath.listFiles();
+        int folderSize = 0;
+        for (File file : folder){
+            System.out.println(file.getName() + " - Size in disk: " + file.length());
+            folderSize += file.length();
+        }
+        System.out.println("Folder Size: " + folderSize + ", in " + folder.length + " files.") ;
+    }
+
     // https://stackoverflow.com/questions/5531455/how-to-hash-some-string-with-sha256-in-java
     private String hashEncoder (String filename) {
         byte[] hashedName = null;
@@ -299,8 +311,6 @@ public class Peer {
         }
         return hexString.toString();
     }
-
-    //TODO https://netjs.blogspot.com/2017/04/reading-all-files-in-folder-java-program.html
 
     // https://www.mkyong.com/java/how-to-get-file-size-in-java/
     // https://stackoverflow.com/questions/10864317/how-to-break-a-file-into-pieces-using-java
