@@ -52,11 +52,12 @@ public class Backup implements Runnable{
                 if (Integer.parseInt(splitString[2]) != this.peerID) {
                     switch (splitString[0]) {
                         case "PUTCHUNK":
-                            System.out.println(new Timestamp(date.getTime())  + " - Backup Message received at " + address + ":" + port + " and it was :\n" + messageReceived.trim());
+                            //System.out.println(new Timestamp(date.getTime())  + " - Backup Message received at " + address + ":" + port + " and it was :\n" + messageReceived.trim());
+                            System.out.println(new Timestamp(date.getTime())  + " - Backup Message received at " + address + ":" + port + " and it was: " + messageReceived.substring(0,84));
                             if(createChunk(splitString[3],Integer.parseInt(splitString[4]),body)){
                                 peer.sendStored(splitString[3], Integer.parseInt(splitString[4]));
                             } else {
-                                System.out.println("Create chunk failed");
+                                System.out.println("Create chunk failed for " + splitString[3] + "_" + splitString[4]);
                             }
                             break;
                         default:

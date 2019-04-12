@@ -7,13 +7,16 @@ import protocol.Control;
 import protocol.Restore;
 import utils.Database;
 
+import javax.swing.plaf.synth.SynthTextAreaUI;
 import java.io.*;
 import java.net.*;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.sql.Timestamp;
 import java.util.*;
 import java.util.concurrent.*;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class Peer {
 
@@ -28,6 +31,11 @@ public class Peer {
     private int mdrPort;
     private InetAddress mdrAddress;
     private Database db;
+    private final int TIME_INTERVAL = 1;
+    private final int ATTEMPTS = 5;
+   // private ArrayList<Integer> chunksSavedByPeers = new ArrayList<>();
+    private ConcurrentHashMap<Integer, Integer> chunksSavedByPeers = new ConcurrentHashMap<>();;
+    public ArrayList<String> listOfChunksSendByPeers = new ArrayList<>();
 
     public static void main(String args[]) throws SocketException, UnknownHostException {
         double protocolVersion = Double.parseDouble(args[0]);
@@ -49,6 +57,7 @@ public class Peer {
         peerFolder = "Peer" + peerID;
         new File(peerFolder).mkdirs();
 
+
         System.out.println("Peer " + peerID + " has started and folder Peer " + peerID +" created. Address and Port are: " + peerAddress.getHostName() + ":"+ peerPort);
         Receiver testAppReceiver = new Receiver(this, peerAddress, peerPort);
         testAppReceiver.start();
@@ -57,60 +66,147 @@ public class Peer {
         startRestoreListener();
     }
 
-    public void sendPutchunk(String filename, int repDeg){
-        byte[] buf = new byte[64000];
-        ArrayList<byte[]> fileToSend = breakFileToSend(filename);
-        String hashedFileName = hashEncoder(filename);
-        try (MulticastSocket socket = new MulticastSocket(mdbPort)) {
-            socket.joinGroup(mdbAddress);
-            // socket.setLoopbackMode(true);
-            Message msg = new Message("PUTCHUNK", 1.0,this.getPeerID(), hashedFileName );
-            for (int i = 0; i < fileToSend.size() ; i++){
-                buf = fileToSend.get(i);
-                byte[] msgToSend = msg.createPutchunkMessage(i, repDeg, buf);
-                DatagramPacket packet = new DatagramPacket(msgToSend, msgToSend.length, mdbAddress, mdbPort);
-                socket.send(packet);
-            }
-            File file = new File(filename);
-            db.addFileToDatabase(filename,fileToSend.size(),file.length(),hashedFileName, repDeg);
-        } catch (IOException ex) {
-            ex.printStackTrace();
-        }
-    }
-
-//    public void sendStored(String filename, int chunkNo){
-//        try (MulticastSocket socket = new MulticastSocket(mcPort)) {
-//            socket.joinGroup(mcAddress);
-//          //  socket.setLoopbackMode(true);
-//            Message msg = new Message("STORED", 1.0,this.getPeerID(), filename);
-//            String msgToSend = msg.createStoredMessage(chunkNo);
-//            //DatagramPacket msgPacket = new DatagramPacket(msgToSend.getBytes(), msgToSend.getBytes().length, this.getIp(), this.getPort());
-//            DatagramPacket msgPacket = new DatagramPacket(msgToSend.getBytes(), msgToSend.getBytes().length, mcAddress, mcPort);
-//            socket.send(msgPacket);
+//    public void sendPutchunk(String filename, int repDeg){
+//        byte[] buf;
+//        BlockingDeque<byte[]> queue =  breakFileToSend(filename);
+//        String hashedFileName = hashEncoder(filename);
+//        try (MulticastSocket socket = new MulticastSocket(mdbPort)) {
+//            socket.joinGroup(mdbAddress);
+//            // socket.setLoopbackMode(true);
+//            Message msg = new Message("PUTCHUNK", 1.0,this.getPeerID(), hashedFileName );
+//            while (!queue.isEmpty()){
+//                buf = queue.removeFirst();
+//                byte[] msgToSend = msg.createPutchunkMessage(, repDeg, buf);
+//                DatagramPacket packet = new DatagramPacket(msgToSend, msgToSend.length, mdbAddress, mdbPort);
+//                socket.send(packet);
+//            }
+//            File file = new File(filename);
+//            db.addFileToDatabase(filename, queue.size(),file.length(),hashedFileName, repDeg);
+//        } catch (IOException ex) {
+//            ex.printStackTrace();
+//        }
+//    }
+//
+//    public void sendPutchunk(String filename, int repDeg){
+//        byte[] buf;
+//        ArrayList<byte[]> fileToSend = breakFileToSend(filename);
+//        String hashedFileName = hashEncoder(filename);
+//        try (MulticastSocket socket = new MulticastSocket(mdbPort)) {
+//            socket.joinGroup(mdbAddress);
+//            // socket.setLoopbackMode(true);
+//            Message msg = new Message("PUTCHUNK", 1.0,this.getPeerID(), hashedFileName );
+//            for (int i = 0; i < fileToSend.size() ; i++){
+//                buf = fileToSend.get(i);
+//                byte[] msgToSend = msg.createPutchunkMessage(i, repDeg, buf);
+//                DatagramPacket packet = new DatagramPacket(msgToSend, msgToSend.length, mdbAddress, mdbPort);
+//                socket.send(packet);
+//            }
+//            File file = new File(filename);
+//            db.addFileToDatabase(filename,fileToSend.size(),file.length(),hashedFileName, repDeg);
 //        } catch (IOException ex) {
 //            ex.printStackTrace();
 //        }
 //    }
 
-    // Executor Threads done with
+    public void sendPutchunk1(String filename, int repDeg) {
+        AtomicInteger delay = new AtomicInteger(1);
+        String hashedFileName = hashEncoder(filename);
+        ConcurrentHashMap<Integer, byte[]> fileToSend = breakFileToSend2(filename);
+        //  for (int chunkIterator = 0; chunkIterator < fileToSend.size() ; chunkIterator++){
+        for (int chunkIterator = 0; chunkIterator < fileToSend.size(); chunkIterator++) {
+            int j = 0;
+            while (j < ATTEMPTS) {
+                int finalChunkIterator = chunkIterator;
+                if (!(getChunkStored(finalChunkIterator))) {
+                    try (MulticastSocket socket = new MulticastSocket(mdbPort)) {
+                        socket.joinGroup(mdbAddress);
+                        //          socket.setLoopbackMode(true);
+                        Message msg = new Message("PUTCHUNK", 1.0, this.getPeerID(), hashedFileName);
+                        byte[] buf = fileToSend.get(finalChunkIterator);
+                        byte[] msgToSend = msg.createPutchunkMessage(finalChunkIterator, repDeg, buf);
+                        DatagramPacket packet = new DatagramPacket(msgToSend, msgToSend.length, mdbAddress, mdbPort);
+                        socket.send(packet);
+                        Date date = new Date();
+                        System.out.println(new Timestamp(date.getTime()) + "Sending: " + msg.toString() + " " + finalChunkIterator);
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                } else {
+                    System.out.println("DELAY NO: " + finalChunkIterator + " - ");
+                    try {
+                        Thread.sleep(TIME_INTERVAL * delay.get());
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
+                    delay.updateAndGet(v -> v * 2);
+                    break;
+                }
+                j++;
+            }
+        }
+        File file = new File(filename);
+        db.addFileToDatabase(filename, fileToSend.size(), file.length(), hashedFileName, repDeg);
+    }
+            /* */
+    public void sendPutchunk(String filename, int repDeg) {
+        AtomicInteger delay = new AtomicInteger(1);
+        String hashedFileName = hashEncoder(filename);
+        ConcurrentHashMap<Integer, byte[]> fileToSend = breakFileToSend2(filename);
+        Message msg = new Message("PUTCHUNK", 1.0, this.getPeerID(), hashedFileName);
+        for (int chunkIterator = 0; chunkIterator < fileToSend.size(); chunkIterator++) {
+            int j = 0;
+            while (j < ATTEMPTS) {
+                int finalChunkIterator = chunkIterator;
+                if (!getChunkStored(finalChunkIterator)) {
+                    ScheduledExecutorService ses = Executors.newScheduledThreadPool(10);
+                    Runnable task2 = () -> {
+                        try (MulticastSocket socket = new MulticastSocket(mdbPort)) {
+                            if (!(getChunkStored(finalChunkIterator))) {
+                                socket.joinGroup(mdbAddress);
+                                byte[] buf = fileToSend.get(finalChunkIterator);
+                                byte[] msgToSend = msg.createPutchunkMessage(finalChunkIterator, repDeg, buf);
+                                DatagramPacket packet = new DatagramPacket(msgToSend, msgToSend.length, mdbAddress, mdbPort);
+                                socket.send(packet);
+                                Date date = new Date();
+                                System.out.println(new Timestamp(date.getTime()) + "Sending: " + msg.toString() + " " + finalChunkIterator);
+                            } else {
+                                System.out.println("DELAY NO: " + finalChunkIterator + " - ");
+                                delay.updateAndGet(v -> v * 2);
+                            }
+                        }
+                        catch (IOException e) {
+                            e.printStackTrace();
+                        }
+                    };
+                    ses.schedule(task2, TIME_INTERVAL * delay.get(), TimeUnit.SECONDS);
+                    ses.shutdown();
+                } else{
+                    break;
+                }
+                j++;
+            }
+        }
+
+        File file = new File(filename);
+        db.addFileToDatabase(filename, fileToSend.size(), file.length(), hashedFileName, repDeg);
+    }
+    // Executor Threads examples:
     // https://www.mkyong.com/java/java-scheduledexecutorservice-examples/
     // https://www.baeldung.com/java-executor-service-tutorial
     public void sendStored(String filename, int chunkNo){
         Message msg = new Message("STORED", 1.0,this.getPeerID(), filename);
         String msgToSend = msg.createStoredMessage(chunkNo);
-        ScheduledExecutorService ses = Executors.newScheduledThreadPool(1);
+        ScheduledExecutorService ses = Executors.newScheduledThreadPool(5);
         Runnable task2 = () -> {
-                try (MulticastSocket socket = new MulticastSocket(mcPort)) {
-                    socket.joinGroup(mcAddress);
-                    //  socket.setLoopbackMode(true);
-                    //DatagramPacket msgPacket = new DatagramPacket(msgToSend.getBytes(), msgToSend.getBytes().length, this.getIp(), this.getPort());
-                    DatagramPacket msgPacket = new DatagramPacket(msgToSend.getBytes(), msgToSend.getBytes().length, mcAddress, mcPort);
-                    socket.send(msgPacket);
-                } catch (IOException ex) {
-                    ex.printStackTrace();
-                }
-            };
-        //run this task after 5 seconds, nonblock for task3
+            try (MulticastSocket socket = new MulticastSocket(mcPort)) {
+                socket.joinGroup(mcAddress);
+                //DatagramPacket msgPacket = new DatagramPacket(msgToSend.getBytes(), msgToSend.getBytes().length, this.getIp(), this.getPort());
+                DatagramPacket msgPacket = new DatagramPacket(msgToSend.getBytes(), msgToSend.getBytes().length, mcAddress, mcPort);
+                socket.send(msgPacket);
+            } catch (IOException ex) {
+                ex.printStackTrace();
+            }
+        };
         ses.schedule(task2, new Random().nextInt(401), TimeUnit.MILLISECONDS);
         ses.shutdown();
     }
@@ -128,15 +224,12 @@ public class Peer {
         return initiatorPeer;
     }
 
-
     public void sendGetChunk(String filename){
         try (MulticastSocket socket = new MulticastSocket(mcPort)) {
             socket.joinGroup(mcAddress);
             //  socket.setLoopbackMode(true);
             String hashedFileName = hashEncoder(filename);
             chunksToRestore = db.getFileChunksNumber(filename);
-       //     chunkList = new ArrayList<>(chunksToRestore);
-       //     list1 = new CopyOnWriteArrayList<>(chunkList);
             fileToRestore = filename;
             setInitiatorPeer(this.getPeerID());
             Message msg = new Message("GETCHUNK", 1.0,this.getPeerID(), hashedFileName);
@@ -151,22 +244,61 @@ public class Peer {
     }
 
     public void sendChunk(String filename, int chunkNo){
-        byte[] buf;
-        try (MulticastSocket socket = new MulticastSocket(mcPort)) {
-            socket.joinGroup(mcAddress);
-            //  socket.setLoopbackMode(true);
-            Message msg = new Message("CHUNK", 1.0,this.getPeerID(), filename);
-            buf = readChunk(filename, chunkNo);
-            byte[] msgToSend = msg.createChunkMessage(chunkNo, buf);
-            DatagramPacket packet = new DatagramPacket(msgToSend, msgToSend.length, mdrAddress, mdrPort);
-            socket.send(packet);
-        } catch (IOException ex) {
-            ex.printStackTrace();
-        }
+            ScheduledExecutorService ses = Executors.newScheduledThreadPool(1);
+            Runnable task3 = () -> {
+                if (!listOfChunksSendByPeers.contains(chunkNo)) {
+                    try (MulticastSocket socket = new MulticastSocket(mcPort)) {
+                        socket.joinGroup(mcAddress);
+                        Message msg = new Message("CHUNK", 1.0, this.getPeerID(), filename);
+                        String filePath = this.getPeerFolder()+ "/" + filename + "_" + chunkNo;
+                        if(new File(filePath).exists()){
+                            byte[] buf = readChunk(filePath);
+                            byte[] msgToSend = msg.createChunkMessage(chunkNo, buf);
+                            DatagramPacket packet = new DatagramPacket(msgToSend, msgToSend.length, mdrAddress, mdrPort);
+                            socket.send(packet);
+                        } else {
+                            System.out.println("I don't have this chunk. " + filename + " " + chunkNo);
+                        }
+                    } catch (IOException ex) {
+                        ex.printStackTrace();
+                    }
+                } else {
+                    System.out.println("Estou aqui?");
+                }
+            };
+            ses.schedule(task3, new Random().nextInt(401), TimeUnit.MILLISECONDS);
+            ses.shutdown();
+    //        while (!listOfChunksSendByPeers.contains(chunkNo)){
+    //            ScheduledExecutorService ses = Executors.newScheduledThreadPool(1);
+    //            Runnable task3 = () -> {
+    //                try (MulticastSocket socket = new MulticastSocket(mcPort)) {
+    //                    socket.joinGroup(mcAddress);
+    //                Message msg = new Message("CHUNK", 1.0,this.getPeerID(), filename);
+    //                buf = readChunk(filename, chunkNo);
+    //                byte[] msgToSend = msg.createChunkMessage(chunkNo, buf);
+    //                DatagramPacket packet = new DatagramPacket(msgToSend, msgToSend.length, mdrAddress, mdrPort);
+    //                socket.send(packet);
+    //                } catch (IOException ex) {
+    //                    ex.printStackTrace();
+    //                }
+    //            };
+    //            ses.schedule(task3, new Random().nextInt(401), TimeUnit.MILLISECONDS);
+    //            ses.shutdown();
+    //            try (MulticastSocket socket = new MulticastSocket(mcPort)) {
+    //                socket.joinGroup(mcAddress);
+    //                //  socket.setLoopbackMode(true);
+    //                Message msg = new Message("CHUNK", 1.0,this.getPeerID(), filename);
+    //                buf = readChunk(filename, chunkNo);
+    //                byte[] msgToSend = msg.createChunkMessage(chunkNo, buf);
+    //                DatagramPacket packet = new DatagramPacket(msgToSend, msgToSend.length, mdrAddress, mdrPort);
+    //                socket.send(packet);
+    //            } catch (IOException ex) {
+    //                ex.printStackTrace();
+    //            }
+    //        }
     }
 
-    private byte[] readChunk(String filename, int chunkNo) throws IOException{
-        String filePath = this.getPeerFolder()+ "/" + filename + "_" + chunkNo;
+    private byte[] readChunk(String filePath) throws IOException{
         File file = new File(filePath);
         byte[] body =  new byte[(int )file.length()];
         FileInputStream fis = new FileInputStream(file);
@@ -201,66 +333,6 @@ public class Peer {
         }
     }
 
-    //   private ArrayList<byte[]> chunkList;
-    // private List<byte[]> list1 = new CopyOnWriteArrayList<>();
-    //   private CopyOnWriteArrayList<byte[]> list1 = new CopyOnWriteArrayList<>();
-//    public void buildFile(byte[] receivedBody, int chunkNo){
-//        if(!list1.contains(receivedBody)){
-//            list1.addIfAbsent(receivedBody);
-//            System.out.println("Added number " + chunkNo);
-//        }else {
-//            System.out.println("Already received chunk number " + chunkNo);
-//        }
-//        if (chunksToRestore == list1.size()){
-//            FileOutputStream fos;
-//            try {
-//                fos = new FileOutputStream(fileToRestore,true);
-//                for (int i = 0; i < chunksToRestore; i++){
-//                    System.out.println("Writing chunk " + i);
-//                    fos.write(list1.get(i));
-//                    fos.flush();
-//                }
-//                fos.close();
-//            }catch (Exception exception){
-//                exception.printStackTrace();
-//            }
-//        }
-//    }
-
-//    public void buildFile(byte[] receivedBody, int chunkNo){
-//
-////        synchronized(list) {
-////            for (byte[] o : list)
-////            {
-////
-////            }
-////        }
-//        if(list1.contains(receivedBody)){
-//            list1.add(chunkNo,receivedBody);
-//        }else {
-//            System.out.println("Already received chunk number " + chunkNo);
-//        }
-////        if(!chunkList.contains(receivedBody)){
-////            chunkList.add(chunkNo,receivedBody);
-////        } else {
-////            System.out.println("Already received chunk number " + chunkNo);
-////        }
-//        if (chunksToRestore == chunkList.size()){
-//            FileOutputStream fos;
-//            try {
-//                fos = new FileOutputStream(fileToRestore,true);
-//                for (int i = 0; i < chunksToRestore; i++){
-//                    System.out.println("Writing chunk " + i);
-//                    fos.write(chunkList.get(i));
-//                    fos.flush();
-//                }
-//                fos.close();
-//            }catch (Exception exception){
-//                exception.printStackTrace();
-//            }
-//        }
-//    }
-
     public void delete(String filename){
         try (MulticastSocket socket = new MulticastSocket(mcPort)) {
             socket.joinGroup(mcAddress);
@@ -275,7 +347,7 @@ public class Peer {
         }
     }
 
-    //TODO https://netjs.blogspot.com/2017/04/reading-all-files-in-folder-java-program.html
+    // https://netjs.blogspot.com/2017/04/reading-all-files-in-folder-java-program.html
     public void state(){
         File filepath = new File(this.getPeerFolder());
         File[] folder = filepath.listFiles();
@@ -310,6 +382,82 @@ public class Peer {
             hexString.append(hex);
         }
         return hexString.toString();
+    }
+
+    private static ConcurrentHashMap<Integer, byte[]>  breakFileToSend2(String filepath) {
+        int partCounter = 1;
+        int sizeOfFiles = 64000;
+        ConcurrentHashMap<Integer, byte[]>  chunkList = new ConcurrentHashMap<>();
+        byte[] buffer = new byte[sizeOfFiles];
+        File file = new File(filepath);
+        int count = 0;
+        try (FileInputStream fis = new FileInputStream(file);
+             BufferedInputStream bis = new BufferedInputStream(fis)) {
+            if (fis.getChannel().size() % 64000 == 0){
+                int bytesAmount = 0;
+                while ((bytesAmount = bis.read(buffer)) > 0) {
+                    chunkList.put(count, Arrays.copyOf(buffer,bytesAmount));
+                    count++;
+                    String filePartName = String.format("%s Number: %03d", filepath, partCounter++);
+                    System.out.println(filePartName + " Size: " + bytesAmount);
+                }
+                byte[] lastItem= new byte[0];
+                chunkList.put(++count, lastItem);
+
+            } else {
+                int bytesAmount = 0;
+                while ((bytesAmount = bis.read(buffer)) > 0) {
+                    chunkList.put(count, Arrays.copyOf(buffer,bytesAmount));
+                    count++;
+                    String filePartName = String.format("%s Number: %03d", filepath, partCounter++);
+                    System.out.println(filePartName + " Size: " + bytesAmount);
+                }
+            }
+        } catch (IOException e) {
+            System.out.println("File name was incorrect. Check Path or filename.");
+            e.printStackTrace();
+        }
+        System.out.println("Total Chunks: " + chunkList.size() + ", total size of file " + file.length() + " bytes.");
+        return chunkList;
+    }
+
+
+    // https://www.baeldung.com/java-queue
+    // https://www.geeksforgeeks.org/queue-interface-java/
+    // https://www.geeksforgeeks.org/introducing-threads-socket-programming-java/
+    // https://web.mit.edu/6.005/www/fa14/classes/20-queues-locks/message-passing/
+    // https://docs.oracle.com/javase/8/docs/api/?java/util/concurrent/LinkedBlockingQueue.html
+    private static LinkedBlockingQueue<byte[]> breakFileToSend1(String filepath) {
+        int partCounter = 1;
+        int sizeOfFiles = 64000;
+        LinkedBlockingQueue<byte[]> listOfFiles = new LinkedBlockingQueue<byte[]>();
+        byte[] buffer = new byte[sizeOfFiles];
+        File file = new File(filepath);
+        try (FileInputStream fis = new FileInputStream(file);
+             BufferedInputStream bis = new BufferedInputStream(fis)) {
+            if (fis.getChannel().size() % 64000 == 0){
+                int bytesAmount = 0;
+                while ((bytesAmount = bis.read(buffer)) > 0) {
+                    listOfFiles.add(Arrays.copyOf(buffer, bytesAmount));
+                    String filePartName = String.format("%s Number: %03d", filepath, partCounter++);
+                    System.out.println(filePartName + " Size: " + bytesAmount);
+                }
+                byte[] lastItem= new byte[0];
+                listOfFiles.add(lastItem);
+            } else {
+                int bytesAmount = 0;
+                while ((bytesAmount = bis.read(buffer)) > 0) {
+                    listOfFiles.add(Arrays.copyOf(buffer, bytesAmount));
+                    String filePartName = String.format("%s Number: %03d", filepath, partCounter++);
+                    System.out.println(filePartName + " Size: " + bytesAmount);
+                }
+            }
+        } catch (IOException e) {
+            System.out.println("File name was incorrect. Check Path or filename.");
+            e.printStackTrace();
+        }
+        System.out.println("Total Chunks: " + listOfFiles.size() + ", total size of file " + file.length() + " bytes.");
+        return listOfFiles;
     }
 
     // https://www.mkyong.com/java/how-to-get-file-size-in-java/
@@ -406,5 +554,31 @@ public class Peer {
 
     public InetAddress getMdrAddress() {
         return mdrAddress;
+    }
+
+//    public void addChunkStored(int peer, int chunkNo){
+//        if(!chunksSavedByPeers.contains(peer)){
+//            System.out.println("peer " + peer + " - " + chunkNo);
+//            chunksSavedByPeers.add(chunkNo, peer);
+//        } else {
+//            System.out.println("Ja tenho o " + peer + " - " + chunkNo);
+//        }
+//    }
+
+    public void addChunkStored(int peer, int chunkNo){
+        Iterator<Integer> it = chunksSavedByPeers.keySet().iterator();
+        while(it.hasNext()){
+            int key = it.next();
+            if(! (key == chunkNo)){
+                chunksSavedByPeers.put(chunkNo, peer);
+                System.out.println("peer " + peer + " - " + chunkNo);
+                return;
+            }
+        }
+        System.out.println("Ja tenho o " + chunkNo + " no peer " + peer);
+    }
+
+    private boolean getChunkStored(int chunkNo){
+        return chunksSavedByPeers.containsKey(chunkNo);
     }
 }

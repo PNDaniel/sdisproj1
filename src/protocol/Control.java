@@ -40,7 +40,8 @@ public class Control implements Runnable {
                 if (Integer.parseInt(splitString[2]) != this.peerID) {
                     switch (splitString[0]) {
                         case "STORED":
-                            System.out.println(new Timestamp(date.getTime())  + " - Store Message received at " + address  + ":" + port + " and it was :\n" + messageReceived.trim());
+                            System.out.println(new Timestamp(date.getTime())  + " - Store Message received at " + address  + ":" + port + " and it was: " + messageReceived.trim().replaceAll("([\\r\\n])", ""));
+                            peer.addChunkStored(Integer.parseInt(splitString[2]), Integer.parseInt(splitString[4]));
                             break;
                         case "GETCHUNK":
                             System.out.println(messageReceived.trim());
@@ -79,20 +80,20 @@ public class Control implements Runnable {
         if (listFiles == null){
             System.out.println("This folder name does not exist.");
             return false;
-        }
-        for (File listFile : listFiles) {
-            if (listFile.isFile()) {
-                String fileName = listFile.getName();
-                if (fileName.startsWith(fileID)) {
-                    System.out.println("found file" + " " + fileName);
-                    // TODO LINUX CHANGE : File file = new File(peer.getPeerFolder()+"/" + fileName);
-                    File file = new File(peer.getPeerFolder()+"\\" + fileName);
-                    System.out.println(file.getAbsolutePath());
-                    return file.delete();
+        } else {
+            for (File listFile : listFiles) {
+                if (listFile.isFile()) {
+                    String fileName = listFile.getName();
+                    if (fileName.startsWith(fileID)) {
+                        System.out.println("found file" + " " + fileName);
+                        // TODO LINUX CHANGE : File file = new File(peer.getPeerFolder()+"/" + fileName);
+                        File file = new File(peer.getPeerFolder()+"\\" + fileName);
+                        file.delete();
+                    }
                 }
             }
+            return true;
         }
-        return false;
     }
 
     public Thread start() {

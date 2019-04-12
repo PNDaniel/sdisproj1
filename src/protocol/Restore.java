@@ -50,12 +50,13 @@ public class Restore implements Runnable {
                         case "CHUNK":
                             if(this.peerID == peer.getInitiatorPeer()) {
                               //  Thread.sleep(ThreadLocalRandom.current().nextInt(401));
-                                //System.out.println(new Timestamp(date.getTime())  + " - Chunk Message received at " + address  + ":" + port + " and it was :\n" + messageReceived.trim());
+                                System.out.println(new Timestamp(date.getTime())  + " - Chunk Message received at " + address  + ":" + port + " and it was :\n" + messageReceived.substring(0,84));
                                 byte[] body = Arrays.copyOfRange(packet.getData(), delimiter, packet.getLength());
-                                System.out.println(new String(body).trim());
+                                //System.out.println(new String(body).trim());
                                 peer.buildFile(body, Integer.parseInt(splitString[4]));
                             } else {
-                                System.out.println("This is not the initiator Peer.");
+                                peer.listOfChunksSendByPeers.add(splitString[4]);
+                                System.out.println(new Timestamp(date.getTime())  + " This is not the initiator Peer.");
                             }
                             break;
                         default:
