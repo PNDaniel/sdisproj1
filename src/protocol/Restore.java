@@ -6,12 +6,9 @@ import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.InetAddress;
 import java.net.MulticastSocket;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
 import java.sql.Timestamp;
-import java.util.Random;
-import java.util.concurrent.ThreadLocalRandom;
 
 public class Restore implements Runnable {
 
@@ -41,8 +38,6 @@ public class Restore implements Runnable {
                 String messageReceived= new String(packet.getData(), 0, packet.getLength());
                 String[] splitString = messageReceived.trim().split("\\s+"); // Any number of consecutive spaces in the string are split into tokens.
                 String messageReceived1 = new String(packet.getData(), 0, packet.getLength());
-//                String[] splitString1 = messageReceived.split("\\s+"); // Any number of consecutive spaces in the string are split into tokens.
-//                System.out.println("Sending:" + splitString1[7]);
                 int delimiter = messageReceived1.indexOf("\\r\\n\\r\\n") + 8;
 
                 if (Integer.parseInt(splitString[2]) != this.peerID) {

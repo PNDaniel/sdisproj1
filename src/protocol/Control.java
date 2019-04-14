@@ -31,7 +31,6 @@ public class Control implements Runnable {
         byte[] buf = new byte[256];
         try (MulticastSocket socket = new MulticastSocket(port)) {
             socket.joinGroup(address);
-         //   socket.setLoopbackMode(true);
             while (true) {
                 DatagramPacket packet = new DatagramPacket(buf, buf.length);
                 socket.receive(packet);

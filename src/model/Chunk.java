@@ -1,6 +1,5 @@
 package model;
 
-import java.lang.reflect.Array;
 import java.util.ArrayList;
 
 public class Chunk {
@@ -17,7 +16,7 @@ public class Chunk {
         this.chunkNo = chunkNo;
         this.desRepDeg = desRepDeg;
         this.actualDeg = 0;
-        this.peers = new ArrayList<Integer>();
+        this.peers = new ArrayList<>();
     }
 
     public void addPeer(int peerID){

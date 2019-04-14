@@ -80,18 +80,4 @@ public class Receiver implements Runnable {
         }
         return thread;
     }
-
-    public String concatenateName(String[] splitString){
-        if (splitString.length == 3)
-            return splitString[2];
-        else {
-            //StringBuilder fullString = new StringBuilder(splitString[2]);
-            String fullString = splitString[2];
-            for (int i = 3; i < splitString.length; i++){
-                fullString = fullString + " " + splitString[i];
-                //fullString.append(" ").append(splitString[i]);
-            }
-            return fullString;
-        }
-    }
 }

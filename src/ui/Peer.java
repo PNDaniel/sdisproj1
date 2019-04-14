@@ -34,7 +34,6 @@ public class Peer {
     private Database db;
     private final int TIME_INTERVAL = 1;
     private final int ATTEMPTS = 5;
- //   private ConcurrentHashMap<Integer, Integer> chunksSavedByPeers = new ConcurrentHashMap<>();
     private ConcurrentHashMap<Integer, Chunk> chunksSendingToPeers = new ConcurrentHashMap<>();
     private ConcurrentHashMap<Integer, Chunk> chunksSavedByPeers1 = new ConcurrentHashMap<>();
     public ArrayList<String> listOfChunksSendByPeers = new ArrayList<>();
@@ -115,7 +114,6 @@ public class Peer {
         File file = new File(filename);
         db.addFileToDatabase(filename, fileToSend.size(), file.length(), hashedFileName, repDeg);
 
-     //   System.out.println(chunksSavedByPeers1);
         for (Map.Entry<Integer, Chunk> entry : chunksSavedByPeers1.entrySet()) {
             String key = entry.getKey().toString();
             Chunk value = entry.getValue();
@@ -289,26 +287,6 @@ public class Peer {
                 i++;
                 tempFolderSize = getCurrentFolderSize();
             }
-//            if (FOLDER_SIZE < tempFolderSize){
-//                int i = 0;
-//                // vai ficar com 14 itens
-//                while (tempFolderSize > folder.length){
-//                    try (MulticastSocket socket = new MulticastSocket(mcPort)) {
-//                        socket.joinGroup(mcAddress);
-//                        String chunkName = folder[i].getName();
-//                        String[] splitString = chunkName.trim().split("_");
-//                        Message msg = new Message("REMOVED", 1.0,this.getPeerID(), splitString[0]);
-//                        String msgToSend =  msg.createRemovedMessage(Integer.parseInt(splitString[1]));
-//                        DatagramPacket msgPacket = new DatagramPacket(msgToSend.getBytes(), msgToSend.getBytes().length, mcAddress, mcPort);
-//                        System.out.println("Going to remove " + chunkName);
-//                        folder[i].delete();
-//                        socket.send(msgPacket);
-//                    } catch (IOException ex) {
-//                        ex.printStackTrace();
-//                    }
-//                    i++;
-//                    tempFolderSize = getCurrentFolderSize();
-//                }
         }else {
             System.out.println("Reclaim number bigger than folder size.");
         }
@@ -501,24 +479,6 @@ public class Peer {
         chunksSavedByPeers1.replace(chunkNo, chunk);
     }
 
-//    public void addChunkStored1(int peer, int chunkNo){
-//        Iterator<Integer> it = chunksSavedByPeers.keySet().iterator();
-//        if (chunksSavedByPeers.isEmpty()){
-//            chunksSavedByPeers.put(chunkNo, peer);
-//        } else {
-//            while(it.hasNext()){
-//                int key = it.next();
-//                if(! (key == chunkNo)){
-//                    chunksSavedByPeers.put(chunkNo, peer);
-//                    System.out.println("Peer " + peer + " guardou o " + chunkNo);
-//                    return;
-//                } else {
-//                    System.out.println("Ja tenho o " + chunkNo + " no peer " + peer);
-//                }
-//            }
-//        }
-//    }
-
     private boolean getChunkStored(int chunkNo){
        // return chunksSavedByPeers1.containsKey(chunkNo);
         if (chunksSavedByPeers1.containsKey(chunkNo)){
@@ -530,8 +490,4 @@ public class Peer {
         return false;
         // return chunksSavedByPeers1.containsKey(chunkNo);
     }
-
-//    private boolean getChunkStored1(int chunkNo){
-//        return chunksSavedByPeers.containsKey(chunkNo);
-//    }
 }

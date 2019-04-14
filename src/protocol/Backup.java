@@ -44,11 +44,9 @@ public class Backup implements Runnable{
                 // https://www.mkyong.com/java/how-to-get-current-timestamps-in-java/
 
                 String messageReceived = new String(packet.getData(), 0, packet.getLength());
-              //  String messageReceived1 = new String(packet.getData(), 0, packet.getLength());
                 int delimiter = messageReceived.indexOf("\\r\\n\\r\\n") + 8;
                 String[] splitString = messageReceived.trim().split("\\s+"); // Any number of consecutive spaces in the string are split into tokens.
                 byte[] body = Arrays.copyOfRange(packet.getData(), delimiter, packet.getLength());
-
                 if (Integer.parseInt(splitString[2]) != this.peerID) {
                     if(splitString[1].equals("1.0")){
                         switch (splitString[0]) {

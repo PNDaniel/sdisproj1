@@ -81,7 +81,6 @@ public class TestApp {
         try {
             DatagramSocket serverSocket = new DatagramSocket();
 //            serverSocket.joinGroup(this.ipAddress);
-
             DatagramPacket msgPacket = new DatagramPacket(msg.getBytes(), msg.getBytes().length, this.ipAddress, this.port);
             serverSocket.send(msgPacket);
             try {
