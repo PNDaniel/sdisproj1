@@ -34,41 +34,36 @@ public class Receiver implements Runnable {
                 String messageReceived= new String(packet.getData(), 0, packet.getLength());
                 System.out.println("TimeStamp: " + new Timestamp(date.getTime()) + " |TestAPP Order: " + messageReceived);
                 String[] splitString = messageReceived.trim().split("\\s+"); // Any number of consecutive spaces in the string are split into tokens.
-                byte[] returnString;
-                DatagramPacket returnPacket;
                 switch (splitString[0])
                 {
                     case "BACKUP":
                         System.out.println("Backup Message received.");
-                        returnString = "Backup, gz.".getBytes();
                         peer.sendPutchunk(splitString[1], Integer.parseInt(splitString[2]));
                         break;
                     case "RESTORE":
                         System.out.println("Restore Message received.");
                         peer.sendGetChunk(splitString[1]);
-                        returnString = "Restore, gz.".getBytes();
                         break;
                     case "DELETE":
                         System.out.println("Delete Message received.");
-                        returnString = "Delete, gz.".getBytes();
                         peer.delete(splitString[1]);
                         break;
                     case "RECLAIM":
                         System.out.println("Reclaim Message received.");
-                        returnString = "Reclaim, gz.".getBytes();
+                        peer.reclaim(Integer.parseInt(splitString[1]) * 1000);
+                        break;
+                    case "STORAGE":
+                        System.out.println("Storage Message received.");
+                        peer.setStorage(Integer.parseInt(splitString[1]) * 1000);
                         break;
                     case "STATE":
                         System.out.println("State Message received.");
                         peer.state();
-                        returnString = "State, gz.".getBytes();
                         break;
                     default:
                         System.out.println("Unknown Message.");
-                        returnString = "Wrong Message Format.".getBytes();
                         break;
                 }
-                returnPacket = new DatagramPacket(returnString, returnString.length, packet.getAddress(), packet.getPort());
-             //   socket.send(returnPacket);
             } catch (IOException e) {
                 e.printStackTrace();
             }

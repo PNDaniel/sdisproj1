@@ -63,7 +63,7 @@ public class Control implements Runnable {
 //                                socket.send(msgPacket);
 //                            }
                                 break;
-                            case "REMOVE":
+                            case "REMOVED":
                                 System.out.println(messageReceived.trim());
                                 break;
                             default:

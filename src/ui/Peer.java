@@ -8,19 +8,19 @@ import protocol.Control;
 import protocol.Restore;
 import utils.Database;
 
-import javax.swing.plaf.synth.SynthTextAreaUI;
 import java.io.*;
 import java.net.*;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
-import java.sql.Timestamp;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public class Peer {
 
+    private static int FOLDER_SIZE = 1000000;
+    private int actualFolderSize;
     private static int peerPort;
     private static InetAddress peerAddress;
     private static int peerID;
@@ -59,7 +59,6 @@ public class Peer {
         peerFolder = "Peer" + peerID;
         new File(peerFolder).mkdirs();
 
-
         System.out.println("Peer " + peerID + " has started and folder Peer " + peerID +" created. Address and Port are: " + peerAddress.getHostName() + ":"+ peerPort);
         Receiver testAppReceiver = new Receiver(this, peerAddress, peerPort);
         testAppReceiver.start();
@@ -96,7 +95,7 @@ public class Peer {
                             }, TIME_INTERVAL * delay.get(), TimeUnit.SECONDS);
                             future.get();
                         } else{
-                            System.out.println(j + " - but Peer already received stored for " + chunkIterator);
+                            System.out.println("Peer already received stored for " + chunkIterator);
                             delay.updateAndGet(v -> v * 2);
                             break;
                         }
@@ -261,6 +260,78 @@ public class Peer {
         }
     }
 
+    public void reclaim(int space){
+        File filepath = new File(this.getPeerFolder());
+        File[] folder = filepath.listFiles();
+        System.out.println(space);
+        if (space < FOLDER_SIZE)
+        {
+            FOLDER_SIZE -= space;
+            int tempFolderSize = getCurrentFolderSize();
+            int i = 0;
+            while (FOLDER_SIZE < tempFolderSize ){
+                try (MulticastSocket socket = new MulticastSocket(mcPort)) {
+                    if (i > folder.length) {
+                        break;
+                    }
+                    socket.joinGroup(mcAddress);
+                    String chunkName = folder[i].getName();
+                    String[] splitString = chunkName.trim().split("_");
+                    Message msg = new Message("REMOVED", 1.0,this.getPeerID(), splitString[0]);
+                    String msgToSend =  msg.createRemovedMessage(Integer.parseInt(splitString[1]));
+                    DatagramPacket msgPacket = new DatagramPacket(msgToSend.getBytes(), msgToSend.getBytes().length, mcAddress, mcPort);
+                    System.out.println("Going to remove " + chunkName);
+                    folder[i].delete();
+                    socket.send(msgPacket);
+                } catch (IOException ex) {
+                    ex.printStackTrace();
+                }
+                i++;
+                tempFolderSize = getCurrentFolderSize();
+            }
+//            if (FOLDER_SIZE < tempFolderSize){
+//                int i = 0;
+//                // vai ficar com 14 itens
+//                while (tempFolderSize > folder.length){
+//                    try (MulticastSocket socket = new MulticastSocket(mcPort)) {
+//                        socket.joinGroup(mcAddress);
+//                        String chunkName = folder[i].getName();
+//                        String[] splitString = chunkName.trim().split("_");
+//                        Message msg = new Message("REMOVED", 1.0,this.getPeerID(), splitString[0]);
+//                        String msgToSend =  msg.createRemovedMessage(Integer.parseInt(splitString[1]));
+//                        DatagramPacket msgPacket = new DatagramPacket(msgToSend.getBytes(), msgToSend.getBytes().length, mcAddress, mcPort);
+//                        System.out.println("Going to remove " + chunkName);
+//                        folder[i].delete();
+//                        socket.send(msgPacket);
+//                    } catch (IOException ex) {
+//                        ex.printStackTrace();
+//                    }
+//                    i++;
+//                    tempFolderSize = getCurrentFolderSize();
+//                }
+        }else {
+            System.out.println("Reclaim number bigger than folder size.");
+        }
+        System.out.println(getCurrentFolderSize());
+    }
+
+    public int getCurrentFolderSize(){
+        File folder = new File(this.getPeerFolder());
+        File[] listOfFiles = folder.listFiles();
+        int space = 0;
+        for (int i = 0; i < listOfFiles.length; i++) {
+            if (listOfFiles[i].isFile()) {
+                space += listOfFiles[i].length();
+            }
+        }
+        this.actualFolderSize = space;
+        return actualFolderSize;
+    }
+
+    public void setStorage(int newStorage){
+        FOLDER_SIZE = newStorage;
+    }
+
     // https://netjs.blogspot.com/2017/04/reading-all-files-in-folder-java-program.html
     public void state(){
         File filepath = new File(this.getPeerFolder());
@@ -333,74 +404,6 @@ public class Peer {
         }
         System.out.println("Total Chunks: " + chunkList.size() + ", total size of file " + file.length() + " bytes.");
         return chunkList;
-    }
-
-
-    // https://www.baeldung.com/java-queue
-    // https://www.geeksforgeeks.org/queue-interface-java/
-    // https://www.geeksforgeeks.org/introducing-threads-socket-programming-java/
-    // https://web.mit.edu/6.005/www/fa14/classes/20-queues-locks/message-passing/
-    // https://docs.oracle.com/javase/8/docs/api/?java/util/concurrent/LinkedBlockingQueue.html
-    private static LinkedBlockingQueue<byte[]> breakFileToSend1(String filepath) {
-        int partCounter = 1;
-        int sizeOfFiles = 64000;
-        LinkedBlockingQueue<byte[]> listOfFiles = new LinkedBlockingQueue<byte[]>();
-        byte[] buffer = new byte[sizeOfFiles];
-        File file = new File(filepath);
-        try (FileInputStream fis = new FileInputStream(file);
-             BufferedInputStream bis = new BufferedInputStream(fis)) {
-            if (fis.getChannel().size() % 64000 == 0){
-                int bytesAmount = 0;
-                while ((bytesAmount = bis.read(buffer)) > 0) {
-                    listOfFiles.add(Arrays.copyOf(buffer, bytesAmount));
-                    String filePartName = String.format("%s Number: %03d", filepath, partCounter++);
-                    System.out.println(filePartName + " Size: " + bytesAmount);
-                }
-                byte[] lastItem= new byte[0];
-                listOfFiles.add(lastItem);
-            } else {
-                int bytesAmount = 0;
-                while ((bytesAmount = bis.read(buffer)) > 0) {
-                    listOfFiles.add(Arrays.copyOf(buffer, bytesAmount));
-                    String filePartName = String.format("%s Number: %03d", filepath, partCounter++);
-                    System.out.println(filePartName + " Size: " + bytesAmount);
-                }
-            }
-        } catch (IOException e) {
-            System.out.println("File name was incorrect. Check Path or filename.");
-            e.printStackTrace();
-        }
-        System.out.println("Total Chunks: " + listOfFiles.size() + ", total size of file " + file.length() + " bytes.");
-        return listOfFiles;
-    }
-
-    // https://www.mkyong.com/java/how-to-get-file-size-in-java/
-    // https://stackoverflow.com/questions/10864317/how-to-break-a-file-into-pieces-using-java
-    private static ArrayList<byte[]> breakFileToSend(String filepath) {
-        int partCounter = 1;
-        int sizeOfFiles = 64000;
-        ArrayList<byte[]> listOfFiles = new ArrayList<>();
-        byte[] buffer = new byte[sizeOfFiles];
-        File file = new File(filepath);
-        try (FileInputStream fis = new FileInputStream(file);
-             BufferedInputStream bis = new BufferedInputStream(fis)) {
-
-            int bytesAmount = 0;
-            while ((bytesAmount = bis.read(buffer)) > 0) {
-                listOfFiles.add(Arrays.copyOf(buffer, bytesAmount));
-                String filePartName = String.format("%s Number: %03d", filepath, partCounter++);
-                System.out.println(filePartName + " Size: " + bytesAmount);
-            }
-        } catch (IOException e) {
-            System.out.println("File name was incorrect. Check Path or filename.");
-            e.printStackTrace();
-        }
-        if(listOfFiles.get(listOfFiles.size() - 1).length == 64000){
-            byte[] lastItem= new byte[0];
-            listOfFiles.add(lastItem);
-        }
-        System.out.println("Total Chunks: " + listOfFiles.size() + ", total size of file " + file.length() + " bytes.");
-        return listOfFiles;
     }
 
     private static void splitAP(String args) throws UnknownHostException {

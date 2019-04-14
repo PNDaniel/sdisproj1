@@ -4,12 +4,11 @@ import java.io.*;
 import java.net.*;
 
 // Usar para Testes :
+// :1923 BACKUP C:\Users\Daniel\Downloads\application-pdf.pdf 1
 // :1923 BACKUP C:\Users\Daniel\Desktop\Recrutamento.txt 3
 // :1923 BACKUP C:\Users\Daniel\Downloads\Estatutos_2018_2019_Revisto.pdf 3
-// :1923 BACKUP C:\Users\Daniel\Downloads\Dynamic_Difficulty_Adjustment_on_MOBA_Games.pdf 3
 // :1923 BACKUP C:\Users\Daniel\Downloads\teste.txt 3
 
-// :1923 DELETE C:\Users\Daniel\Desktop\Recrutamento.txt
 public class TestApp {
 
     private static Peer peer;
@@ -40,32 +39,35 @@ public class TestApp {
                 System.out.println("Operation was " + operation);
                 filename = args[2];
                 repDegree =  Integer.parseInt(args[3]);
-             //   breakFileToSend(filename);
-                //peer.backup(breakFileToSend(filename), repDegree);
                 initMsg = "BACKUP " + filename + " " + repDegree;
                 initiatePeer(initMsg);
                 break;
             case "RESTORE":
                 System.out.println("Operation was " + operation);
                 filename = args[2];
-                initMsg = "RESTORE " + filename ;
+                initMsg = "RESTORE " + filename;
                 initiatePeer(initMsg);
                 break;
             case "DELETE":
                 System.out.println("Operation was " + operation);
                 filename = args[2];
-                initMsg = "DELETE " + filename ;
+                initMsg = "DELETE " + filename;
                 initiatePeer(initMsg);
                 break;
             case "RECLAIM":
                 System.out.println("Operation was " + operation);
                 size = Integer.parseInt(args[2]);
-                initMsg = "RECLAIM " + size ;
+                initMsg = "RECLAIM " + size;
                 initiatePeer(initMsg);
                 break;
             case "STATE":
                 System.out.println("Operation was " + operation);
-                initMsg = "STATE" ;
+                initMsg = "STATE";
+                initiatePeer(initMsg);
+                break;
+            case "STORAGE":
+                System.out.println("Operation was " + operation);
+                initMsg = "STORAGE";
                 initiatePeer(initMsg);
                 break;
             default:
