@@ -34,7 +34,8 @@ public class Peer {
     private Database db;
     private final int TIME_INTERVAL = 1;
     private final int ATTEMPTS = 5;
-    private ConcurrentHashMap<Integer, Integer> chunksSavedByPeers = new ConcurrentHashMap<>();
+ //   private ConcurrentHashMap<Integer, Integer> chunksSavedByPeers = new ConcurrentHashMap<>();
+    private ConcurrentHashMap<Integer, Chunk> chunksSendingToPeers = new ConcurrentHashMap<>();
     private ConcurrentHashMap<Integer, Chunk> chunksSavedByPeers1 = new ConcurrentHashMap<>();
     public ArrayList<String> listOfChunksSendByPeers = new ArrayList<>();
 
@@ -79,7 +80,7 @@ public class Peer {
                 addChunkToMap(chunk);
                 int j = 0;
                 while (j < ATTEMPTS) {
-                    System.out.println(j + " - Trying to send chunkNumber " + chunkIterator);
+                  //  System.out.println(j + " - Trying to send chunkNumber " + chunkIterator);
                     if (!getChunkStored(chunkIterator)) {
                         byte[] buf = fileToSend.get(chunkIterator);
                         byte[] msgToSend = msg.createPutchunkMessage(chunkIterator, repDeg, buf);
@@ -121,13 +122,12 @@ public class Peer {
                     + " Chunk: " + value.getChunkNo()
                     + " ActDeg: " + value.getActualDeg()
                     + " Size: " + value.getChunkSize()
-                    + " RepDeg: " + value.getDesRepDeg());
+                    + " RepDeg: " + value.getDesRepDeg() + "\n");
             for (int i = 0; i < value.getPeers().size() ; i++){
-                System.out.println(" Peer: " + value.getPeers().get(i));
+                System.out.print(" Peer: " + value.getPeers().get(i) + " ");
             }
             System.out.println("\n");
         }
-
     }
 
     // Executor Threads examples:
@@ -468,14 +468,14 @@ public class Peer {
     }
 
     public void addChunkToMap(Chunk chunk){
-        Iterator<Integer> it = chunksSavedByPeers1.keySet().iterator();
-        if (chunksSavedByPeers1.isEmpty()){
-            chunksSavedByPeers1.put(chunk.getChunkNo(), chunk);
+        Iterator<Integer> it = chunksSendingToPeers.keySet().iterator();
+        if (chunksSendingToPeers.isEmpty()){
+            chunksSendingToPeers.put(chunk.getChunkNo(), chunk);
         } else {
             while(it.hasNext()){
                 int key = it.next();
                 if(! (key == chunk.getChunkNo())){
-                    chunksSavedByPeers1.put(chunk.getChunkNo(), chunk);
+                    chunksSendingToPeers.put(chunk.getChunkNo(), chunk);
                     System.out.println("Criado o " + chunk.getChunkNo());
                     return;
                 } else {
@@ -486,40 +486,48 @@ public class Peer {
     }
 
     public void addChunkStored(int peer, int chunkNo){
-        Iterator<Integer> it = chunksSavedByPeers1.keySet().iterator();
-        while(it.hasNext()){
-            int key = it.next();
-            if( (key == chunkNo)){
-                Chunk chunk = chunksSavedByPeers1.get(key);
-                chunk.addPeer(peer);
-                chunksSavedByPeers1.replace(key, chunk);
-                return;
-            }
-        }
+//        Iterator<Integer> it = chunksSendingToPeers.keySet().iterator();
+////        if (chunksSavedByPeers1.isEmpty()){
+////            chunksSavedByPeers1.putAll(chunksSendingToPeers);
+////        }
+//        while(it.hasNext()){
+//            int key = it.next();
+//            if( (key == chunkNo)){
+//                Chunk chunk = chunksSendingToPeers.get(key);
+//                chunk.addPeer(peer);
+//                // chunksSavedByPeers1.replace(key, chunk);
+//                chunksSavedByPeers1.put(key, chunk);
+//                return;
+//            }
+//        }
+        Chunk chunk = chunksSendingToPeers.get(chunkNo);
+        chunk.addPeer(peer);
+        chunksSavedByPeers1.put(chunkNo, chunk);
     }
 
-    public void addChunkStored1(int peer, int chunkNo){
-        Iterator<Integer> it = chunksSavedByPeers.keySet().iterator();
-        if (chunksSavedByPeers.isEmpty()){
-            chunksSavedByPeers.put(chunkNo, peer);
-        } else {
-            while(it.hasNext()){
-                int key = it.next();
-                if(! (key == chunkNo)){
-                    chunksSavedByPeers.put(chunkNo, peer);
-                    System.out.println("Peer " + peer + " guardou o " + chunkNo);
-                    return;
-                } else {
-                    System.out.println("Ja tenho o " + chunkNo + " no peer " + peer);
-                }
-            }
-        }
-    }
+//    public void addChunkStored1(int peer, int chunkNo){
+//        Iterator<Integer> it = chunksSavedByPeers.keySet().iterator();
+//        if (chunksSavedByPeers.isEmpty()){
+//            chunksSavedByPeers.put(chunkNo, peer);
+//        } else {
+//            while(it.hasNext()){
+//                int key = it.next();
+//                if(! (key == chunkNo)){
+//                    chunksSavedByPeers.put(chunkNo, peer);
+//                    System.out.println("Peer " + peer + " guardou o " + chunkNo);
+//                    return;
+//                } else {
+//                    System.out.println("Ja tenho o " + chunkNo + " no peer " + peer);
+//                }
+//            }
+//        }
+//    }
+
     private boolean getChunkStored(int chunkNo){
         return chunksSavedByPeers1.containsKey(chunkNo);
     }
 
-    private boolean getChunkStored1(int chunkNo){
-        return chunksSavedByPeers.containsKey(chunkNo);
-    }
+//    private boolean getChunkStored1(int chunkNo){
+//        return chunksSavedByPeers.containsKey(chunkNo);
+//    }
 }
