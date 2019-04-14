@@ -16,6 +16,7 @@ public class Chunk {
         this.fileName = fileName;
         this.chunkNo = chunkNo;
         this.desRepDeg = desRepDeg;
+        this.actualDeg = 0;
         this.peers = new ArrayList<Integer>();
     }
 

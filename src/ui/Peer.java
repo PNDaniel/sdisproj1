@@ -79,29 +79,31 @@ public class Peer {
                 Chunk chunk = new Chunk(filename,chunkIterator, repDeg);
                 addChunkToMap(chunk);
                 int j = 0;
-                while (j < ATTEMPTS) {
-                  //  System.out.println(j + " - Trying to send chunkNumber " + chunkIterator);
-                    if (!getChunkStored(chunkIterator)) {
-                        byte[] buf = fileToSend.get(chunkIterator);
-                        byte[] msgToSend = msg.createPutchunkMessage(chunkIterator, repDeg, buf);
-                        DatagramPacket packet = new DatagramPacket(msgToSend, msgToSend.length, mdbAddress, mdbPort);
-                        ScheduledThreadPoolExecutor scheduledThreadPoolExecutor = new ScheduledThreadPoolExecutor(10);
-                        ScheduledFuture future = scheduledThreadPoolExecutor.schedule(() -> {
-                            try {
-                                socket.send(packet);
-                            } catch (IOException e) {
-                                e.printStackTrace();
-                            }
-                        }, TIME_INTERVAL * delay.get(), TimeUnit.SECONDS);
-                        future.get();
-                    } else{
-                        System.out.println(j + " - but Peer already received stored for " + chunkIterator);
-                        delay.updateAndGet(v -> v * 2);
-                        break;
+                if(chunksSavedByPeers1.get(chunkIterator).getActualDeg() <= chunksSavedByPeers1.get(chunkIterator).getDesRepDeg() ){
+                    while (j < ATTEMPTS) {
+                        //  System.out.println(j + " - Trying to send chunkNumber " + chunkIterator);
+                        if (!getChunkStored(chunkIterator)) {
+                            byte[] buf = fileToSend.get(chunkIterator);
+                            byte[] msgToSend = msg.createPutchunkMessage(chunkIterator, repDeg, buf);
+                            DatagramPacket packet = new DatagramPacket(msgToSend, msgToSend.length, mdbAddress, mdbPort);
+                            ScheduledThreadPoolExecutor scheduledThreadPoolExecutor = new ScheduledThreadPoolExecutor(10);
+                            ScheduledFuture future = scheduledThreadPoolExecutor.schedule(() -> {
+                                try {
+                                    socket.send(packet);
+                                } catch (IOException e) {
+                                    e.printStackTrace();
+                                }
+                            }, TIME_INTERVAL * delay.get(), TimeUnit.SECONDS);
+                            future.get();
+                        } else{
+                            System.out.println(j + " - but Peer already received stored for " + chunkIterator);
+                            delay.updateAndGet(v -> v * 2);
+                            break;
+                        }
+                        j++;
                     }
-                    j++;
+                    delay.set(1);
                 }
-                delay.set(1);
             }
         }
         catch (IOException e) {
@@ -122,9 +124,10 @@ public class Peer {
                     + " Chunk: " + value.getChunkNo()
                     + " ActDeg: " + value.getActualDeg()
                     + " Size: " + value.getChunkSize()
-                    + " RepDeg: " + value.getDesRepDeg() + "\n");
+                    + " RepDeg: " + value.getDesRepDeg() + "\n"
+                    + " Peer: ");
             for (int i = 0; i < value.getPeers().size() ; i++){
-                System.out.print(" Peer: " + value.getPeers().get(i) + " ");
+                System.out.print(value.getPeers().get(i) + " | ");
             }
             System.out.println("\n");
         }
@@ -471,38 +474,28 @@ public class Peer {
         Iterator<Integer> it = chunksSendingToPeers.keySet().iterator();
         if (chunksSendingToPeers.isEmpty()){
             chunksSendingToPeers.put(chunk.getChunkNo(), chunk);
+            chunksSavedByPeers1.putAll(chunksSendingToPeers);
         } else {
             while(it.hasNext()){
                 int key = it.next();
                 if(! (key == chunk.getChunkNo())){
                     chunksSendingToPeers.put(chunk.getChunkNo(), chunk);
                     System.out.println("Criado o " + chunk.getChunkNo());
+                    chunksSavedByPeers1.putAll(chunksSendingToPeers);
                     return;
                 } else {
                     System.out.println("Ja tenho o " + chunk.getChunkNo());
                 }
             }
         }
+
     }
 
     public void addChunkStored(int peer, int chunkNo){
-//        Iterator<Integer> it = chunksSendingToPeers.keySet().iterator();
-////        if (chunksSavedByPeers1.isEmpty()){
-////            chunksSavedByPeers1.putAll(chunksSendingToPeers);
-////        }
-//        while(it.hasNext()){
-//            int key = it.next();
-//            if( (key == chunkNo)){
-//                Chunk chunk = chunksSendingToPeers.get(key);
-//                chunk.addPeer(peer);
-//                // chunksSavedByPeers1.replace(key, chunk);
-//                chunksSavedByPeers1.put(key, chunk);
-//                return;
-//            }
-//        }
         Chunk chunk = chunksSendingToPeers.get(chunkNo);
         chunk.addPeer(peer);
-        chunksSavedByPeers1.put(chunkNo, chunk);
+        //chunksSavedByPeers1.put(chunkNo, chunk);
+        chunksSavedByPeers1.replace(chunkNo, chunk);
     }
 
 //    public void addChunkStored1(int peer, int chunkNo){
@@ -524,7 +517,15 @@ public class Peer {
 //    }
 
     private boolean getChunkStored(int chunkNo){
-        return chunksSavedByPeers1.containsKey(chunkNo);
+       // return chunksSavedByPeers1.containsKey(chunkNo);
+        if (chunksSavedByPeers1.containsKey(chunkNo)){
+            if (chunksSavedByPeers1.get(chunkNo).getPeers().size() != 0){
+                return true;
+            }
+            else return false;
+        }
+        return false;
+        // return chunksSavedByPeers1.containsKey(chunkNo);
     }
 
 //    private boolean getChunkStored1(int chunkNo){
