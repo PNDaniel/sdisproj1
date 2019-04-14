@@ -64,6 +64,7 @@ public class Control implements Runnable {
                                 break;
                             case "REMOVED":
                                 System.out.println(messageReceived.trim());
+                                peer.reSendChunk(splitString[3], splitString[4]);
                                 break;
                             default:
                                 System.out.println("Unknown Message in MC.\n" + messageReceived);

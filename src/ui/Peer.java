@@ -11,6 +11,7 @@ import utils.Database;
 import java.io.*;
 import java.net.*;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.*;
@@ -261,7 +262,6 @@ public class Peer {
     public void reclaim(int space){
         File filepath = new File(this.getPeerFolder());
         File[] folder = filepath.listFiles();
-        System.out.println(space);
         if (space < FOLDER_SIZE)
         {
             FOLDER_SIZE -= space;
@@ -304,6 +304,39 @@ public class Peer {
         }
         this.actualFolderSize = space;
         return actualFolderSize;
+    }
+
+    public void reSendChunk(String filename, String chunkNo){
+        String fileId = filename + "_" + chunkNo;
+        File folder = new File(this.getPeerFolder(), fileId);
+        if(folder.exists()) {
+            try (MulticastSocket socket = new MulticastSocket(mdbPort)) {
+                socket.joinGroup(mdbAddress);
+                Message msg = new Message("PUTCHUNK", 1.0, this.getPeerID(), filename);
+             //       if (chunksSavedByPeers1.get(chunkIterator).getActualDeg() <= chunksSavedByPeers1.get(chunkIterator).getDesRepDeg()) {
+                byte[] buf = Files.readAllBytes(folder.toPath());
+                byte[] msgToSend = msg.createPutchunkMessage(Integer.parseInt(chunkNo), 2, buf);
+                DatagramPacket packet = new DatagramPacket(msgToSend, msgToSend.length, mdbAddress, mdbPort);
+                ScheduledThreadPoolExecutor scheduledThreadPoolExecutor = new ScheduledThreadPoolExecutor(10);
+                ScheduledFuture future = scheduledThreadPoolExecutor.schedule(() -> {
+                    try {
+                        socket.send(packet);
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                }, new Random().nextInt(401) , TimeUnit.MILLISECONDS);
+                future.get();
+            } catch (IOException e) {
+                e.printStackTrace();
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            } catch (ExecutionException e) {
+                e.printStackTrace();
+            }
+        }
+        else {
+            System.out.println("Peer " + this.getPeerID() +" doesn't have this file.");
+        }
     }
 
     public void setStorage(int newStorage){
@@ -461,11 +494,8 @@ public class Peer {
                 int key = it.next();
                 if(! (key == chunk.getChunkNo())){
                     chunksSendingToPeers.put(chunk.getChunkNo(), chunk);
-                    System.out.println("Criado o " + chunk.getChunkNo());
                     chunksSavedByPeers1.putAll(chunksSendingToPeers);
                     return;
-                } else {
-                    System.out.println("Ja tenho o " + chunk.getChunkNo());
                 }
             }
         }
@@ -475,12 +505,15 @@ public class Peer {
     public void addChunkStored(int peer, int chunkNo){
         Chunk chunk = chunksSendingToPeers.get(chunkNo);
         chunk.addPeer(peer);
-        //chunksSavedByPeers1.put(chunkNo, chunk);
-        chunksSavedByPeers1.replace(chunkNo, chunk);
+
+        if (chunksSavedByPeers1.containsKey(chunkNo)){
+            chunksSavedByPeers1.replace(chunkNo, chunk);
+        } else {
+            chunksSavedByPeers1.put(chunkNo, chunk);
+        }
     }
 
     private boolean getChunkStored(int chunkNo){
-       // return chunksSavedByPeers1.containsKey(chunkNo);
         if (chunksSavedByPeers1.containsKey(chunkNo)){
             if (chunksSavedByPeers1.get(chunkNo).getPeers().size() != 0){
                 return true;
@@ -488,6 +521,5 @@ public class Peer {
             else return false;
         }
         return false;
-        // return chunksSavedByPeers1.containsKey(chunkNo);
     }
 }
