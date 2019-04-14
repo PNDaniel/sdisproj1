@@ -46,22 +46,24 @@ public class Restore implements Runnable {
                 int delimiter = messageReceived1.indexOf("\\r\\n\\r\\n") + 8;
 
                 if (Integer.parseInt(splitString[2]) != this.peerID) {
-                    switch (splitString[0]) {
-                        case "CHUNK":
-                            if(this.peerID == peer.getInitiatorPeer()) {
-                              //  Thread.sleep(ThreadLocalRandom.current().nextInt(401));
-                                System.out.println(new Timestamp(date.getTime())  + " - Chunk Message received at " + address  + ":" + port + " and it was :\n" + messageReceived.substring(0,84));
-                                byte[] body = Arrays.copyOfRange(packet.getData(), delimiter, packet.getLength());
-                                //System.out.println(new String(body).trim());
-                                peer.buildFile(body, Integer.parseInt(splitString[4]));
-                            } else {
-                                peer.listOfChunksSendByPeers.add(splitString[4]);
-                                System.out.println(new Timestamp(date.getTime())  + " This is not the initiator Peer.");
-                            }
-                            break;
-                        default:
-                            System.out.println("Unknown Message in MDR.\n" + messageReceived);
-                            break;
+                    if(splitString[1].equals("1.0")) {
+                        switch (splitString[0]) {
+                            case "CHUNK":
+                                if (this.peerID == peer.getInitiatorPeer()) {
+                                    //  Thread.sleep(ThreadLocalRandom.current().nextInt(401));
+                                    System.out.println(new Timestamp(date.getTime()) + " - Chunk Message received at " + address + ":" + port + " and it was :\n" + messageReceived.substring(0, 84));
+                                    byte[] body = Arrays.copyOfRange(packet.getData(), delimiter, packet.getLength());
+                                    //System.out.println(new String(body).trim());
+                                    peer.buildFile(body, Integer.parseInt(splitString[4]));
+                                } else {
+                                    peer.listOfChunksSendByPeers.add(splitString[4]);
+                                    System.out.println(new Timestamp(date.getTime()) + " This is not the initiator Peer.");
+                                }
+                                break;
+                            default:
+                                System.out.println("Unknown Message in MDR.\n" + messageReceived);
+                                break;
+                        }
                     }
                 }
             }

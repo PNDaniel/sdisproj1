@@ -1,5 +1,6 @@
 package protocol;
 
+import model.Chunk;
 import ui.Peer;
 
 import java.io.File;
@@ -38,35 +39,37 @@ public class Control implements Runnable {
                 String messageReceived= new String(packet.getData(), 0, packet.getLength());
                 String[] splitString = messageReceived.trim().split("\\s+"); // Any number of consecutive spaces in the string are split into tokens.
                 if (Integer.parseInt(splitString[2]) != this.peerID) {
-                    switch (splitString[0]) {
-                        case "STORED":
-                            System.out.println(new Timestamp(date.getTime())  + " - Store Message received at " + address  + ":" + port + " and it was: " + messageReceived.trim().replaceAll("([\\r\\n])", ""));
-                            peer.addChunkStored(Integer.parseInt(splitString[2]), Integer.parseInt(splitString[4]));
-                            break;
-                        case "GETCHUNK":
-                            System.out.println(messageReceived.trim());
-                            peer.setInitiatorPeer(Integer.parseInt(splitString[2]));
-                            peer.sendChunk(splitString[3], Integer.parseInt(splitString[4]));
-                            break;
-                        case "DELETE":
-                            System.out.println(messageReceived.trim());
-                            checkFile(splitString[3]);
-                            // TODO This message does not elicit any response message. An implementation may send this message as many times as it is deemed necessary to ensure that all space used by chunks of the deleted file are deleted in spite of the loss of some messages.
-                            //
-                            // TODO Enhancement: If a peer that backs up some chunks of the file is not running at the time the initiator peer sends a DELETE message for that file,
-                            //  the space used by these chunks will never be reclaimed. Cange to the protocol, possibly including additional messages, allowing to reclaim storage space even in that event?
+                    if(splitString[1].equals("1.0")) {
+                        switch (splitString[0]) {
+                            case "STORED":
+                                System.out.println(new Timestamp(date.getTime()) + " - Store Message received at " + address + ":" + port + " and it was: " + messageReceived.trim().replaceAll("([\\r\\n])", ""));
+                                peer.addChunkStored(Integer.parseInt(splitString[2]), Integer.parseInt(splitString[4]));
+                                break;
+                            case "GETCHUNK":
+                                System.out.println(messageReceived.trim());
+                                peer.setInitiatorPeer(Integer.parseInt(splitString[2]));
+                                peer.sendChunk(splitString[3], Integer.parseInt(splitString[4]));
+                                break;
+                            case "DELETE":
+                                System.out.println(messageReceived.trim());
+                                checkFile(splitString[3]);
+                                // TODO This message does not elicit any response message. An implementation may send this message as many times as it is deemed necessary to ensure that all space used by chunks of the deleted file are deleted in spite of the loss of some messages.
+                                //
+                                // TODO Enhancement: If a peer that backs up some chunks of the file is not running at the time the initiator peer sends a DELETE message for that file,
+                                //  the space used by these chunks will never be reclaimed. Cange to the protocol, possibly including additional messages, allowing to reclaim storage space even in that event?
 //                            if(checkFile(splitString[3])){
 //                                String msgToSend =  "DELETE";
 //                                DatagramPacket msgPacket = new DatagramPacket(msgToSend.getBytes(), msgToSend.getBytes().length, peer.getMcAddress(), peer.getMcPort());
 //                                socket.send(msgPacket);
 //                            }
-                            break;
-                        case "REMOVE":
-                            System.out.println(messageReceived.trim());
-                            break;
-                        default:
-                            System.out.println("Unknown Message in MC.\n" + messageReceived);
-                            break;
+                                break;
+                            case "REMOVE":
+                                System.out.println(messageReceived.trim());
+                                break;
+                            default:
+                                System.out.println("Unknown Message in MC.\n" + messageReceived);
+                                break;
+                        }
                     }
                 }
             }

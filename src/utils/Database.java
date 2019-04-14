@@ -15,7 +15,6 @@ public class Database implements java.io.Serializable{
 //            backedFileList =  new ArrayList<>();
 //        }
 //        System.out.println(backedFileList.size());
-
     }
 
     int number = -1;
@@ -26,6 +25,10 @@ public class Database implements java.io.Serializable{
                 }
         );
         return number;
+    }
+
+    public ArrayList<BackedFile> getBackedFileList(){
+        return backedFileList;
     }
 
     public void addFileToDatabase(String fileName, int chunks, long fileSize, String hashedFileName, int desRepDeg){
