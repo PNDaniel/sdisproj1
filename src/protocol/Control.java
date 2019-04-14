@@ -1,6 +1,5 @@
 package protocol;
 
-import model.Chunk;
 import ui.Peer;
 
 import java.io.File;

@@ -20,8 +20,8 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 public class Peer {
 
-    private static int FOLDER_SIZE = 1000000;
-   // private static int FOLDER_SIZE = 5000000;
+   // private static int FOLDER_SIZE = 1000000;
+    private static int FOLDER_SIZE = 5000000;
     private int actualFolderSize;
     private static int peerPort;
     private static InetAddress peerAddress;
@@ -204,8 +204,6 @@ public class Peer {
                 } catch (IOException ex) {
                     ex.printStackTrace();
                 }
-            } else {
-                System.out.println("Estou aqui?");
             }
         };
         ses.schedule(task3, new Random().nextInt(401), TimeUnit.MILLISECONDS);

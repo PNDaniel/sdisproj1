@@ -30,7 +30,6 @@ public class Restore implements Runnable {
         byte[] buf = new byte[65000];
         try (MulticastSocket socket = new MulticastSocket(port)) {
             socket.joinGroup(address);
-            //   socket.setLoopbackMode(true);
             while (true) {
                 DatagramPacket packet = new DatagramPacket(buf, buf.length);
                 socket.receive(packet);
@@ -45,10 +44,8 @@ public class Restore implements Runnable {
                         switch (splitString[0]) {
                             case "CHUNK":
                                 if (this.peerID == peer.getInitiatorPeer()) {
-                                    //  Thread.sleep(ThreadLocalRandom.current().nextInt(401));
                                     System.out.println(new Timestamp(date.getTime()) + " - Chunk Message received at " + address + ":" + port + " and it was :\n" + messageReceived.substring(0, 84));
                                     byte[] body = Arrays.copyOfRange(packet.getData(), delimiter, packet.getLength());
-                                    //System.out.println(new String(body).trim());
                                     peer.buildFile(body, Integer.parseInt(splitString[4]));
                                 } else {
                                     peer.listOfChunksSendByPeers.add(splitString[4]);
