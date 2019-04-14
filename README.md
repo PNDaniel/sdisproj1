@@ -1,5 +1,10 @@
 # sdisproj1
 SDIS Project #1
 
-Application had issues with 224.0.0.1 because it's an all-host group - https://www.tldp.org/HOWTO/Multicast-HOWTO-2.html
-Using 224.0.0.3 .5 and .7 for Multicast Addresses.
+With the Terminal/Console:
+- Inside project folder, run make to compile the java classes.
+
+- Running the Peer(s) and TestApp:
+	- To run (each) Peer type java ui.Peer 0 3 :1925 224.0.0.3 4447 224.0.0.5 4448 224.0.0.7 4449
+	- To run TestApp java ui.TestApp :1923 BACKUP C:\Users\user\Downloads\test.pdf 1 
+

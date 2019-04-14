@@ -54,7 +54,7 @@ public class Backup implements Runnable{
                                 //System.out.println(new Timestamp(date.getTime())  + " - Backup Message received at " + address + ":" + port + " and it was :\n" + messageReceived.trim());
                                 System.out.println(new Timestamp(date.getTime())  + " - Backup Message received at " + address + ":" + port + " and it was: " + messageReceived.substring(0,84));
                                 if(createChunk(splitString[3],Integer.parseInt(splitString[4]),body)){
-                                    peer.sendStored(splitString[3], Integer.parseInt(splitString[4]));
+                                    peer.sendStored(splitString[3], Integer.parseInt(splitString[4]), Integer.parseInt(splitString[5]));
                                 } else {
                                     System.out.println("Create chunk failed for " + splitString[3] + "_" + splitString[4]);
                                 }

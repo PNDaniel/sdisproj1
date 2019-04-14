@@ -70,7 +70,7 @@ public class Peer {
     public void sendPutchunk(String filename, int repDeg) {
         AtomicInteger delay = new AtomicInteger(1);
         String hashedFileName = hashEncoder(filename);
-        ConcurrentHashMap<Integer, byte[]> fileToSend = breakFileToSend2(filename);
+        ConcurrentHashMap<Integer, byte[]> fileToSend = breakFileToSend(filename);
         try (MulticastSocket socket = new MulticastSocket(mdbPort)) {
             socket.joinGroup(mdbAddress);
             Message msg = new Message("PUTCHUNK", 1.0, this.getPeerID(), hashedFileName);
@@ -80,7 +80,6 @@ public class Peer {
                 int j = 0;
                 if(chunksSavedByPeers1.get(chunkIterator).getActualDeg() <= chunksSavedByPeers1.get(chunkIterator).getDesRepDeg() ){
                     while (j < ATTEMPTS) {
-                        //  System.out.println(j + " - Trying to send chunkNumber " + chunkIterator);
                         if (!getChunkStored(chunkIterator)) {
                             byte[] buf = fileToSend.get(chunkIterator);
                             byte[] msgToSend = msg.createPutchunkMessage(chunkIterator, repDeg, buf);
@@ -127,14 +126,16 @@ public class Peer {
             for (int i = 0; i < value.getPeers().size() ; i++){
                 System.out.print(value.getPeers().get(i) + " | ");
             }
-            System.out.println("\n");
+            System.out.print("\n");
         }
     }
 
     // Executor Threads examples:
     // https://www.mkyong.com/java/java-scheduledexecutorservice-examples/
     // https://www.baeldung.com/java-executor-service-tutorial
-    public void sendStored(String filename, int chunkNo){
+    public void sendStored(String filename, int chunkNo, int RepDeg){
+        Chunk chunk = new Chunk(filename,chunkNo, RepDeg);
+        addChunkToMap(chunk);
         Message msg = new Message("STORED", 1.0,this.getPeerID(), filename);
         String msgToSend = msg.createStoredMessage(chunkNo);
         ScheduledExecutorService ses = Executors.newScheduledThreadPool(5);
@@ -380,7 +381,7 @@ public class Peer {
         return hexString.toString();
     }
 
-    private static ConcurrentHashMap<Integer, byte[]>  breakFileToSend2(String filepath) {
+    private static ConcurrentHashMap<Integer, byte[]>  breakFileToSend(String filepath) {
         int partCounter = 1;
         int sizeOfFiles = 64000;
         ConcurrentHashMap<Integer, byte[]>  chunkList = new ConcurrentHashMap<>();
@@ -399,7 +400,6 @@ public class Peer {
                 }
                 byte[] lastItem= new byte[0];
                 chunkList.put(++count, lastItem);
-
             } else {
                 int bytesAmount = 0;
                 while ((bytesAmount = bis.read(buffer)) > 0) {
@@ -499,26 +499,35 @@ public class Peer {
                 }
             }
         }
-
     }
 
-    public void addChunkStored(int peer, int chunkNo){
+    public void addChunkStored(int peer, int chunkNo, String fileName){
         Chunk chunk = chunksSendingToPeers.get(chunkNo);
         chunk.addPeer(peer);
-
         if (chunksSavedByPeers1.containsKey(chunkNo)){
             chunksSavedByPeers1.replace(chunkNo, chunk);
         } else {
             chunksSavedByPeers1.put(chunkNo, chunk);
         }
+//        if(!chunksSendingToPeers.isEmpty()){
+//            Chunk chunk = chunksSendingToPeers.get(chunkNo);
+//            chunk.addPeer(peer);
+//            if (chunksSavedByPeers1.containsKey(chunkNo)){
+//                chunksSavedByPeers1.replace(chunkNo, chunk);
+//            } else {
+//                chunksSavedByPeers1.put(chunkNo, chunk);
+//            }
+//        } else{
+//            Chunk chunk = new Chunk(fileName, chunkNo, desRepDeg);
+//            if (!chunksSavedByPeers1.containsKey(chunkNo)){
+//                chunksSavedByPeers1.put(chunkNo, chunk);
+//            }
+//        }
     }
 
     private boolean getChunkStored(int chunkNo){
         if (chunksSavedByPeers1.containsKey(chunkNo)){
-            if (chunksSavedByPeers1.get(chunkNo).getPeers().size() != 0){
-                return true;
-            }
-            else return false;
+            return chunksSavedByPeers1.get(chunkNo).getPeers().size() != 0;
         }
         return false;
     }

@@ -42,7 +42,7 @@ public class Control implements Runnable {
                         switch (splitString[0]) {
                             case "STORED":
                                 System.out.println(new Timestamp(date.getTime()) + " - Store Message received at " + address + ":" + port + " and it was: " + messageReceived.trim().replaceAll("([\\r\\n])", ""));
-                                peer.addChunkStored(Integer.parseInt(splitString[2]), Integer.parseInt(splitString[4]));
+                                peer.addChunkStored(Integer.parseInt(splitString[2]), Integer.parseInt(splitString[4]), splitString[3]);
                                 break;
                             case "GETCHUNK":
                                 System.out.println(messageReceived.trim());
