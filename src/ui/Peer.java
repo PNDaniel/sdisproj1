@@ -21,6 +21,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 public class Peer {
 
     private static int FOLDER_SIZE = 1000000;
+   // private static int FOLDER_SIZE = 5000000;
     private int actualFolderSize;
     private static int peerPort;
     private static InetAddress peerAddress;
@@ -342,6 +343,7 @@ public class Peer {
 
     public void setStorage(int newStorage){
         FOLDER_SIZE = newStorage;
+        System.out.println("Peer " +  peerID + " now has a maximum of " + FOLDER_SIZE);
     }
 
     // https://netjs.blogspot.com/2017/04/reading-all-files-in-folder-java-program.html
@@ -391,15 +393,15 @@ public class Peer {
         try (FileInputStream fis = new FileInputStream(file);
              BufferedInputStream bis = new BufferedInputStream(fis)) {
             if (fis.getChannel().size() % 64000 == 0){
-                int bytesAmount = 0;
+                int bytesAmount;
                 while ((bytesAmount = bis.read(buffer)) > 0) {
                     chunkList.put(count, Arrays.copyOf(buffer,bytesAmount));
                     count++;
                     String filePartName = String.format("%s Number: %03d", filepath, partCounter++);
                     System.out.println(filePartName + " Size: " + bytesAmount);
                 }
-                byte[] lastItem= new byte[0];
-                chunkList.put(++count, lastItem);
+                byte[] lastItem = new byte[0];
+                chunkList.put(count, lastItem);
             } else {
                 int bytesAmount = 0;
                 while ((bytesAmount = bis.read(buffer)) > 0) {
@@ -408,6 +410,7 @@ public class Peer {
                     String filePartName = String.format("%s Number: %03d", filepath, partCounter++);
                     System.out.println(filePartName + " Size: " + bytesAmount);
                 }
+
             }
         } catch (IOException e) {
             System.out.println("File name was incorrect. Check Path or filename.");
@@ -482,6 +485,10 @@ public class Peer {
 
     public InetAddress getMdrAddress() {
         return mdrAddress;
+    }
+
+    public int getFolderSize(){
+        return FOLDER_SIZE;
     }
 
     public void addChunkToMap(Chunk chunk){

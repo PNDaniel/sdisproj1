@@ -51,12 +51,15 @@ public class Backup implements Runnable{
                     if(splitString[1].equals("1.0")){
                         switch (splitString[0]) {
                             case "PUTCHUNK":
-                                //System.out.println(new Timestamp(date.getTime())  + " - Backup Message received at " + address + ":" + port + " and it was :\n" + messageReceived.trim());
                                 System.out.println(new Timestamp(date.getTime())  + " - Backup Message received at " + address + ":" + port + " and it was: " + messageReceived.substring(0,84));
-                                if(createChunk(splitString[3],Integer.parseInt(splitString[4]),body)){
-                                    peer.sendStored(splitString[3], Integer.parseInt(splitString[4]), Integer.parseInt(splitString[5]));
+                                if((peer.getCurrentFolderSize() + body.length) <= peer.getFolderSize()) {
+                                    if(createChunk(splitString[3],Integer.parseInt(splitString[4]),body)){
+                                        peer.sendStored(splitString[3], Integer.parseInt(splitString[4]), Integer.parseInt(splitString[5]));
+                                    } else {
+                                        System.out.println("Create chunk failed for " + splitString[3] + "_" + splitString[4]);
+                                    }
                                 } else {
-                                    System.out.println("Create chunk failed for " + splitString[3] + "_" + splitString[4]);
+                                    System.out.println("Peer doesn't have space.");
                                 }
                                 break;
                             default:
@@ -81,7 +84,7 @@ public class Backup implements Runnable{
         return thread;
     }
 
-    public boolean createChunk(String fileID, int chunkNo, byte[] data) {
+    public boolean  createChunk(String fileID, int chunkNo, byte[] data) {
         String filename = peer.getPeerFolder()+ "/" + fileID + "_" + chunkNo;
         File chunkfile = new File(filename);
         if (chunkfile.exists()) {

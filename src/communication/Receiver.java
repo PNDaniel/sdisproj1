@@ -2,6 +2,7 @@ package communication;
 
 import ui.Peer;
 
+import javax.swing.plaf.synth.SynthTextAreaUI;
 import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
@@ -32,7 +33,7 @@ public class Receiver implements Runnable {
                 socket.receive(packet);
                 Date date = new Date();
                 String messageReceived= new String(packet.getData(), 0, packet.getLength());
-                System.out.println("TimeStamp: " + new Timestamp(date.getTime()) + " |TestAPP Order: " + messageReceived);
+                System.out.println("TimeStamp: " + new Timestamp(date.getTime()) + " | TestAPP Order: " + messageReceived);
                 String[] splitString = messageReceived.trim().split("\\s+"); // Any number of consecutive spaces in the string are split into tokens.
                 switch (splitString[0])
                 {

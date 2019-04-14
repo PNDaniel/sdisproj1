@@ -67,7 +67,7 @@ public class TestApp {
                 break;
             case "STORAGE":
                 System.out.println("Operation was " + operation);
-                initMsg = "STORAGE";
+                initMsg = "STORAGE " + args[2];
                 initiatePeer(initMsg);
                 break;
             default:
